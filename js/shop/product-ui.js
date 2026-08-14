@@ -14,9 +14,19 @@
     });
   }
 
+  if (!slug) {
+    root.innerHTML = '<p class="empty-state">Missing product. <a href="/shop/">Back to shop</a></p>';
+    return;
+  }
+
+  if (typeof AryamCatalog === "undefined") {
+    root.innerHTML = '<p class="empty-state">Shop scripts failed to load. <a href="/shop/">Back to shop</a></p>';
+    return;
+  }
+
   AryamCatalog.bySlug(slug).then(function (p) {
     if (!p || !p.published) {
-      root.innerHTML = '<p class="empty-state">Piece not found. <a href="index.html">Back to shop</a></p>';
+      root.innerHTML = '<p class="empty-state">Piece not found. <a href="/shop/">Back to shop</a></p>';
       return;
     }
 
@@ -25,7 +35,8 @@
     if (metaDesc) metaDesc.setAttribute("content", p.seo_description || p.description || "");
 
     var price = AryamPricing.displayPrice(p);
-    var img = p.image_url || "../images/hero.jpg";
+    var img = p.image_url || "/images/hero.jpg";
+    if (img.indexOf("../") === 0) img = "/" + img.replace(/^\.\.\//, "");
     var inStock = p.stock_qty > 0;
 
     root.innerHTML =
@@ -82,6 +93,8 @@
         el.innerHTML += " · market ref ~" + AryamPricing.formatMoney(m) + "/g";
       }
     });
+  }).catch(function () {
+    root.innerHTML = '<p class="empty-state">Could not load this piece. <a href="/shop/">Back to shop</a></p>';
   });
 
   function setupZoom() {

@@ -25,9 +25,9 @@ Static landing + online shop + admin. Portable to its own domain later.
 4. Deploy. You’ll get a URL like `https://aryam-jewelry.vercel.app`.
 5. Optional: add a custom domain in Vercel → Project → Settings → Domains.
 
-After the first deploy, every push to `main` auto-redeploys.
+  After the first deploy, every push to `main` auto-redeploys.
 
-Update `js/shop/config.js` `siteUrl` (and canonical URLs in HTML/sitemap if you want) to your Vercel or custom domain once you know it.
+  Custom domain: add **aryam.us** in Vercel → Domains. `siteUrl` in `js/shop/config.js` is already set to `https://aryam.us`.
 
 ## Local preview
 
@@ -67,14 +67,17 @@ Instagram on the photos: [@aryamjewelry0](https://www.instagram.com/aryamjewelry
 5. Add `STRIPE_PUBLISHABLE_KEY` to config.  
 6. Until then, checkout runs in **demo mode** (no card charge; stock still decrements locally).
 
-## Deploy under techrevenuebrief.com/aryam
+## Deploy on aryam.us (Vercel)
 
-Copy this folder to `/aryam/`. Paths are relative. If the path changes, find-replace `techrevenuebrief.com/aryam` in `index.html`, `shop/index.html`, `sitemap.xml`, and `config.js` `siteUrl`.
+1. Import the GitHub repo into Vercel and deploy.
+2. In Vercel → Project → **Settings → Domains**, add `aryam.us` and `www.aryam.us`.
+3. At your domain registrar, point DNS as Vercel instructs (usually A/`www` CNAME).
+4. After DNS propagates, the site serves at https://aryam.us
 
-Add to robots.txt:
+Add to `robots.txt` (or Vercel project):
 
 ```
-Sitemap: https://techrevenuebrief.com/aryam/sitemap.xml
+Sitemap: https://aryam.us/sitemap.xml
 ```
 
 ## Google Merchant Center

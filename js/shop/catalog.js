@@ -5,20 +5,27 @@
   var LOCAL_KEY = "aryamProductsLocalV2";
   var cfg = function () { return global.ARYAM_CONFIG || {}; };
 
+  function supabaseLib() {
+    return global.supabase || null;
+  }
+
   function hasSupabase() {
     var c = cfg();
-    return !!(c.supabaseUrl && c.supabaseAnonKey && global.supabase);
+    var lib = supabaseLib();
+    return !!(c.supabaseUrl && c.supabaseAnonKey && lib && typeof lib.createClient === "function");
   }
 
   function client() {
     if (!hasSupabase()) return null;
     if (!global.__aryamSb) {
-      global.__aryamSb = global.supabase.createClient(cfg().supabaseUrl, cfg().supabaseAnonKey);
+      global.__aryamSb = supabaseLib().createClient(cfg().supabaseUrl, cfg().supabaseAnonKey);
     }
     return global.__aryamSb;
   }
 
   function normalize(p) {
+    var img = p.image_url || p.image_path || "";
+    if (img.indexOf("../") === 0) img = "/" + img.replace(/^\.\.\//, "");
     return {
       id: p.id,
       slug: p.slug,
@@ -35,7 +42,7 @@
       sell_price_per_gram: Number(p.sell_price_per_gram),
       making_charge: Number(p.making_charge) || 0,
       stock_qty: Number(p.stock_qty) || 0,
-      image_url: p.image_url || p.image_path || "",
+      image_url: img,
       published: p.published !== false
     };
   }
@@ -55,7 +62,7 @@
 
   function loadSeed() {
     var base = document.querySelector("script[data-seed-base]");
-    var url = (base && base.getAttribute("data-seed-base")) || "../data/products.seed.json";
+    var url = (base && base.getAttribute("data-seed-base")) || "/data/products.seed.json";
     return fetch(url, { cache: "no-store" })
       .then(function (r) {
         if (!r.ok) throw new Error("seed");

@@ -12,10 +12,10 @@
     var out = p.stock_qty <= 0;
     var img = p.image_url || "../images/hero.jpg";
     return (
-      '<a class="product-card" href="product.html?slug=' + encodeURIComponent(p.slug) + '" data-reveal>' +
+      '<a class="product-card" href="/shop/product?slug=' + encodeURIComponent(p.slug) + '" data-reveal>' +
         '<div class="media">' +
           (out ? '<span class="soldout">Sold out</span>' : "") +
-          '<img src="' + img + '" alt="' + escapeAttr(p.title) + '" loading="lazy" width="600" height="800" />' +
+          '<img src="' + (img.indexOf("http") === 0 || img.indexOf("/") === 0 ? img : "/" + img.replace(/^\.\.\//, "")) + '" alt="' + escapeAttr(p.title) + '" loading="lazy" width="600" height="800" />' +
         "</div>" +
         '<div class="body">' +
           '<span class="meta">' + p.karat + "K · " + labelCat(p.category) + "</span>" +
