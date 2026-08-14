@@ -25,3 +25,4 @@ images/products/*.jpeg
 *.tmp
 maps.html
 maps2.html
+supabase/.temp/
