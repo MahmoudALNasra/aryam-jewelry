@@ -2,42 +2,52 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Products Admin | Aryam's Jewelry</title>
   <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#0b0a08" />
   <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,400&family=Manrope:wght@400;500;600&family=Amiri:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/admin.css" />
 </head>
 <body class="admin-body">
+  <div class="admin-backdrop" id="adminBackdrop" hidden></div>
   <div class="admin-shell">
-    <aside class="admin-side">
+    <aside class="admin-side" id="adminSide">
       <div class="brand">
         <span class="brand-en">ARYAM&rsquo;S <em>ADMIN</em></span>
         <span class="brand-ar" lang="ar" dir="rtl">لوحة التحكم</span>
       </div>
       <nav>
-        <a class="active" href="products.html">Products &amp; stock</a>
-        <a href="/shop/"" target="_blank">View shop ↗</a>
-        <a href="/" target="_blank">Landing ↗</a>
+        <a class="active" href="/admin/products">Products &amp; stock</a>
+        <a href="/shop/" target="_blank" rel="noopener">View shop ↗</a>
+        <a href="/" target="_blank" rel="noopener">Landing ↗</a>
         <button type="button" class="linkish" id="logoutBtn">Sign out</button>
       </nav>
     </aside>
 
     <main class="admin-main">
+      <div class="admin-topbar">
+        <button type="button" class="admin-side-toggle" id="navToggle" aria-label="Open menu">☰</button>
+        <strong style="color:var(--gold-2);letter-spacing:0.08em;font-size:0.85rem">ADMIN</strong>
+        <span style="width:44px"></span>
+      </div>
+
       <h1>Products &amp; <em>stock</em></h1>
-      <p style="color:var(--muted);margin:0 0 0.5rem;max-width:40rem">
-        Set grams, karat, and your selling price per gram. Display price = grams × sell $/g + making charge.
-        Stock is saved locally until Supabase keys are added — then it syncs for Merchant Center exports.
+      <p class="admin-lead">
+        Add pieces with your phone camera, set grams / karat / sell $/g, and publish to the shop.
+        Price = grams × sell $/g + making charge.
       </p>
 
       <div class="spot-bar" id="spotBar">Loading live gold spot…</div>
 
-      <div class="admin-toolbar">
-        <button type="button" class="btn btn-gold btn-small" id="btnNew">Add piece</button>
-        <button type="button" class="btn btn-ghost btn-small" id="btnExport">Export Merchant Center CSV</button>
-        <button type="button" class="btn btn-ghost btn-small" id="btnResetSeed">Reset to seed data</button>
+      <div class="admin-toolbar" id="mainToolbar">
+        <button type="button" class="btn btn-gold btn-small" id="btnNew">+ Add piece</button>
+        <button type="button" class="btn btn-ghost btn-small" id="btnExport">Export CSV</button>
+        <button type="button" class="btn btn-ghost btn-small" id="btnResetSeed">Reset seed</button>
       </div>
+
+      <div class="product-list" id="productCards" aria-live="polite"></div>
 
       <div class="admin-table-wrap">
         <table class="admin-table">
@@ -59,22 +69,36 @@
         </table>
       </div>
 
-      <form id="productEditor" class="login-card" style="max-width:none;margin:2rem 0 0" hidden>
-        <h2 id="editorTitle" style="font-family:var(--font-display);margin:0 0 1rem">New piece</h2>
+      <form id="productEditor" class="login-card" hidden>
+        <h2 id="editorTitle" style="font-family:var(--font-display);margin:0 0 1rem;font-size:1.35rem">New piece</h2>
         <input type="hidden" name="id" />
+        <input type="hidden" name="image_url" id="imageUrlField" />
+
+        <div class="photo-upload full" style="margin-bottom:1.25rem">
+          <div class="photo-preview" id="photoPreview">Tap below to take or choose a photo</div>
+          <div class="photo-actions">
+            <label class="btn btn-gold btn-small">
+              Camera / gallery
+              <input type="file" id="photoFile" accept="image/*" capture="environment" />
+            </label>
+            <button type="button" class="btn btn-ghost btn-small" id="btnClearPhoto">Clear photo</button>
+          </div>
+          <p class="upload-status" id="uploadStatus"></p>
+          <p class="photo-hint">Opens your camera on phones. Photos are compressed, then uploaded to Supabase Storage when connected.</p>
+        </div>
 
         <div class="editor-grid">
           <label>Title (EN)
-            <input name="title" required />
+            <input name="title" required autocomplete="off" />
           </label>
           <label>Title (AR)
-            <input name="title_ar" lang="ar" dir="rtl" />
+            <input name="title_ar" lang="ar" dir="rtl" autocomplete="off" />
           </label>
           <label>Slug (URL)
-            <input name="slug" placeholder="auto if blank on new" />
+            <input name="slug" placeholder="auto if blank" autocomplete="off" />
           </label>
           <label>SKU
-            <input name="sku" placeholder="ARY-…" />
+            <input name="sku" placeholder="ARY-…" autocomplete="off" />
           </label>
           <label class="full">Description (EN)
             <textarea name="description" rows="3"></textarea>
@@ -83,7 +107,7 @@
             <textarea name="description_ar" rows="2" lang="ar" dir="rtl"></textarea>
           </label>
           <label class="full">SEO title
-            <input name="seo_title" />
+            <input name="seo_title" autocomplete="off" />
           </label>
           <label class="full">SEO description
             <textarea name="seo_description" rows="2"></textarea>
@@ -108,27 +132,24 @@
             </select>
           </label>
           <label>Weight (grams)
-            <input name="weight_grams" type="number" step="0.001" min="0.001" required />
+            <input name="weight_grams" type="number" inputmode="decimal" step="0.001" min="0.001" required />
           </label>
           <label>Sell price $/gram
-            <input name="sell_price_per_gram" type="number" step="0.01" min="0" required />
+            <input name="sell_price_per_gram" type="number" inputmode="decimal" step="0.01" min="0" required />
           </label>
           <label>Making charge ($)
-            <input name="making_charge" type="number" step="0.01" min="0" value="0" />
+            <input name="making_charge" type="number" inputmode="decimal" step="0.01" min="0" value="0" />
           </label>
           <label>Stock qty
-            <input name="stock_qty" type="number" step="1" min="0" value="1" required />
+            <input name="stock_qty" type="number" inputmode="numeric" step="1" min="0" value="1" required />
           </label>
-          <label class="full">Image URL (e.g. ../images/products/ARY-001.jpg)
-            <input name="image_url" />
-          </label>
-          <label style="flex-direction:row;align-items:center;gap:0.6rem">
-            <input name="published" type="checkbox" checked style="width:auto" />
+          <label class="full checkbox-row">
+            <input name="published" type="checkbox" checked />
             Published (visible in shop)
           </label>
         </div>
 
-        <div class="admin-toolbar" style="margin-top:1rem">
+        <div class="admin-toolbar" style="margin-top:1rem;position:static;border:0;background:transparent;padding:0">
           <button type="button" class="btn btn-ghost btn-small" id="btnUseMarket">Use market $/g</button>
           <button type="button" class="btn btn-ghost btn-small" id="btnMarkup">Market + markup %</button>
         </div>
@@ -137,8 +158,8 @@
           <div class="big">$0.00</div>
         </div>
 
-        <div class="admin-toolbar">
-          <button type="submit" class="btn btn-gold">Save piece</button>
+        <div class="admin-toolbar" style="position:static;border:0;background:transparent;margin-top:1.25rem;padding:0">
+          <button type="submit" class="btn btn-gold" id="btnSave">Save piece</button>
           <button type="button" class="btn btn-ghost" id="btnCancel">Cancel</button>
         </div>
       </form>
@@ -151,6 +172,7 @@
   <script src="/js/shop/catalog.js" data-seed-base="/data/products.seed.json"></script>
   <script src="/js/admin/auth.js"></script>
   <script src="/js/admin/export-gmc.js"></script>
+  <script src="/js/admin/upload.js"></script>
   <script src="/js/admin/admin-ui.js"></script>
 </body>
 </html>

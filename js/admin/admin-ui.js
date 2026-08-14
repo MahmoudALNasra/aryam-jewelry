@@ -4,17 +4,17 @@
   var loginForm = document.getElementById("loginForm");
   if (loginForm) {
     if (AryamAdminAuth.isAuthed()) {
-      location.href = "products.html";
+      location.href = "/admin/products";
       return;
     }
     loginForm.addEventListener("submit", function (e) {
       e.preventDefault();
       var ok = AryamAdminAuth.login(loginForm.password.value);
       var err = document.getElementById("loginError");
-      if (ok) location.href = "products.html";
+      if (ok) location.href = "/admin/products";
       else {
         err.hidden = false;
-        err.textContent = "Wrong password. Check env.example / config.js (ADMIN_DEMO_PASSWORD).";
+        err.textContent = "Wrong password.";
       }
     });
     return;
@@ -26,14 +26,41 @@
   if (logoutBtn) {
     logoutBtn.addEventListener("click", function () {
       AryamAdminAuth.logout();
-      location.href = "index.html";
+      location.href = "/admin/";
     });
   }
 
+  /* Mobile nav */
+  var navToggle = document.getElementById("navToggle");
+  var backdrop = document.getElementById("adminBackdrop");
+  function closeNav() { document.body.classList.remove("admin-nav-open"); if (backdrop) backdrop.hidden = true; }
+  function openNav() { document.body.classList.add("admin-nav-open"); if (backdrop) backdrop.hidden = false; }
+  if (navToggle) navToggle.addEventListener("click", function () {
+    if (document.body.classList.contains("admin-nav-open")) closeNav();
+    else openNav();
+  });
+  if (backdrop) backdrop.addEventListener("click", closeNav);
+
   var tableBody = document.getElementById("productRows");
+  var cardsEl = document.getElementById("productCards");
   var editor = document.getElementById("productEditor");
   var spotBar = document.getElementById("spotBar");
+  var photoPreview = document.getElementById("photoPreview");
+  var photoFile = document.getElementById("photoFile");
+  var uploadStatus = document.getElementById("uploadStatus");
+  var imageUrlField = document.getElementById("imageUrlField");
   var spotOz = null;
+
+  function setPhotoPreview(url) {
+    if (!photoPreview) return;
+    if (url) {
+      photoPreview.classList.add("has-image");
+      photoPreview.innerHTML = '<img src="' + url + '" alt="Product photo" />';
+    } else {
+      photoPreview.classList.remove("has-image");
+      photoPreview.textContent = "Tap below to take or choose a photo";
+    }
+  }
 
   function refreshSpot() {
     if (!spotBar) return;
@@ -53,31 +80,62 @@
     });
   }
 
+  function imgSrc(p) {
+    var u = (p && p.image_url) || "/images/hero.jpg";
+    if (u.indexOf("../") === 0) u = "/" + u.replace(/^\.\.\//, "");
+    return u;
+  }
+
   function loadTable() {
-    if (!tableBody) return;
     AryamCatalog.loadAll(true).then(function (list) {
       if (!list.length) {
-        tableBody.innerHTML = '<tr><td colspan="8">No products yet. Add one.</td></tr>';
+        if (tableBody) tableBody.innerHTML = '<tr><td colspan="8">No products yet. Add one.</td></tr>';
+        if (cardsEl) cardsEl.innerHTML = '<p class="empty-state" style="color:var(--muted);text-align:center;padding:2rem">No products yet. Tap <strong>Add piece</strong>.</p>';
         return;
       }
-      tableBody.innerHTML = list.map(function (p) {
-        var price = AryamPricing.formatMoney(AryamPricing.displayPrice(p));
-        return (
-          "<tr>" +
-            '<td><img class="thumb" src="' + (p.image_url || "../images/hero.jpg") + '" alt="" /></td>' +
-            "<td><strong>" + esc(p.title) + "</strong><br><span style='color:var(--muted);font-size:0.8rem'>" + esc(p.sku || p.slug) + "</span></td>" +
-            "<td>" + p.karat + "K</td>" +
-            "<td>" + p.weight_grams + " g</td>" +
-            "<td>" + price + "</td>" +
-            "<td>" + p.stock_qty + "</td>" +
-            "<td>" + (p.published ? "Live" : "Draft") + "</td>" +
-            '<td class="actions">' +
-              '<button type="button" class="btn btn-ghost btn-small" data-edit="' + p.id + '">Edit</button>' +
-              '<button type="button" class="btn btn-ghost btn-small" data-del="' + p.id + '">Delete</button>' +
-            "</td>" +
-          "</tr>"
-        );
-      }).join("");
+
+      if (cardsEl) {
+        cardsEl.innerHTML = list.map(function (p) {
+          var price = AryamPricing.formatMoney(AryamPricing.displayPrice(p));
+          return (
+            '<article class="admin-card">' +
+              '<img src="' + imgSrc(p) + '" alt="" loading="lazy" />' +
+              "<div>" +
+                "<h3>" + esc(p.title) + "</h3>" +
+                '<p class="meta">' + p.karat + "K · " + p.weight_grams + "g · stock " + p.stock_qty +
+                  ' · <span class="' + (p.published ? "badge-live" : "badge-draft") + '">' +
+                  (p.published ? "Live" : "Draft") + "</span></p>" +
+                '<p class="price">' + price + "</p>" +
+                '<div class="actions">' +
+                  '<button type="button" class="btn btn-ghost btn-small" data-edit="' + p.id + '">Edit</button>' +
+                  '<button type="button" class="btn btn-ghost btn-small" data-del="' + p.id + '">Delete</button>' +
+                "</div>" +
+              "</div>" +
+            "</article>"
+          );
+        }).join("");
+      }
+
+      if (tableBody) {
+        tableBody.innerHTML = list.map(function (p) {
+          var price = AryamPricing.formatMoney(AryamPricing.displayPrice(p));
+          return (
+            "<tr>" +
+              '<td><img class="thumb" src="' + imgSrc(p) + '" alt="" /></td>' +
+              "<td><strong>" + esc(p.title) + "</strong><br><span style='color:var(--muted);font-size:0.8rem'>" + esc(p.sku || p.slug) + "</span></td>" +
+              "<td>" + p.karat + "K</td>" +
+              "<td>" + p.weight_grams + " g</td>" +
+              "<td>" + price + "</td>" +
+              "<td>" + p.stock_qty + "</td>" +
+              "<td>" + (p.published ? "Live" : "Draft") + "</td>" +
+              '<td class="actions">' +
+                '<button type="button" class="btn btn-ghost btn-small" data-edit="' + p.id + '">Edit</button>' +
+                '<button type="button" class="btn btn-ghost btn-small" data-del="' + p.id + '">Delete</button>' +
+              "</td>" +
+            "</tr>"
+          );
+        }).join("");
+      }
     });
   }
 
@@ -90,6 +148,8 @@
   function openEditor(product) {
     if (!editor) return;
     editor.hidden = false;
+    var tb = document.getElementById("mainToolbar");
+    if (tb) tb.hidden = true;
     editor.scrollIntoView({ behavior: "smooth", block: "start" });
     var f = editor;
     f.id.value = product ? product.id : "";
@@ -107,9 +167,11 @@
     f.sell_price_per_gram.value = product ? product.sell_price_per_gram : "";
     f.making_charge.value = product ? product.making_charge : 0;
     f.stock_qty.value = product ? product.stock_qty : 1;
-    f.image_url.value = product ? product.image_url : "../images/products/";
+    imageUrlField.value = product ? (product.image_url || "") : "";
     f.published.checked = product ? !!product.published : true;
     document.getElementById("editorTitle").textContent = product ? "Edit piece" : "New piece";
+    setPhotoPreview(imageUrlField.value);
+    if (uploadStatus) uploadStatus.textContent = "";
     updatePreview();
   }
 
@@ -137,6 +199,18 @@
         : "");
   }
 
+  function onListClick(e) {
+    var editId = e.target.getAttribute("data-edit");
+    var delId = e.target.getAttribute("data-del");
+    if (editId) AryamCatalog.byId(editId).then(openEditor);
+    if (delId && confirm("Delete this piece?")) {
+      AryamCatalog.deleteProduct(delId).then(loadTable);
+    }
+  }
+
+  if (tableBody) tableBody.addEventListener("click", onListClick);
+  if (cardsEl) cardsEl.addEventListener("click", onListClick);
+
   if (editor) {
     ["weight_grams", "sell_price_per_gram", "making_charge", "karat"].forEach(function (name) {
       editor[name].addEventListener("input", updatePreview);
@@ -148,6 +222,8 @@
 
     document.getElementById("btnCancel").addEventListener("click", function () {
       editor.hidden = true;
+      var tb = document.getElementById("mainToolbar");
+      if (tb) tb.hidden = false;
     });
 
     document.getElementById("btnUseMarket").addEventListener("click", function () {
@@ -172,8 +248,41 @@
       }
     });
 
+    document.getElementById("btnClearPhoto").addEventListener("click", function () {
+      imageUrlField.value = "";
+      if (photoFile) photoFile.value = "";
+      setPhotoPreview("");
+      if (uploadStatus) uploadStatus.textContent = "";
+    });
+
+    if (photoFile) {
+      photoFile.addEventListener("change", function () {
+        var file = photoFile.files && photoFile.files[0];
+        if (!file) return;
+        uploadStatus.textContent = "Compressing & uploading…";
+        var hint = editor.slug.value || editor.title.value || "piece";
+        AryamUpload.uploadProductImage(file, hint)
+          .then(function (url) {
+            imageUrlField.value = url;
+            setPhotoPreview(url);
+            uploadStatus.textContent = url.indexOf("data:") === 0
+              ? "Saved as local preview (set up Storage for permanent cloud URLs)."
+              : "Photo uploaded.";
+          })
+          .catch(function (err) {
+            uploadStatus.textContent = "Upload failed: " + (err.message || err);
+          });
+      });
+    }
+
     editor.addEventListener("submit", function (e) {
       e.preventDefault();
+      if (!imageUrlField.value.trim()) {
+        if (!confirm("No photo yet. Save anyway?")) return;
+      }
+      var btn = document.getElementById("btnSave");
+      btn.disabled = true;
+      btn.textContent = "Saving…";
       var product = {
         id: editor.id.value || undefined,
         slug: editor.slug.value.trim(),
@@ -190,26 +299,20 @@
         sell_price_per_gram: Number(editor.sell_price_per_gram.value),
         making_charge: Number(editor.making_charge.value) || 0,
         stock_qty: Number(editor.stock_qty.value) || 0,
-        image_url: editor.image_url.value.trim(),
+        image_url: imageUrlField.value.trim(),
         published: editor.published.checked
       };
       AryamCatalog.saveProduct(product).then(function () {
         editor.hidden = true;
+        var tb = document.getElementById("mainToolbar");
+        if (tb) tb.hidden = false;
         loadTable();
       }).catch(function (err) {
         alert("Save failed: " + (err.message || err));
+      }).finally(function () {
+        btn.disabled = false;
+        btn.textContent = "Save piece";
       });
-    });
-
-    tableBody.addEventListener("click", function (e) {
-      var editId = e.target.getAttribute("data-edit");
-      var delId = e.target.getAttribute("data-del");
-      if (editId) {
-        AryamCatalog.byId(editId).then(openEditor);
-      }
-      if (delId && confirm("Delete this piece?")) {
-        AryamCatalog.deleteProduct(delId).then(loadTable);
-      }
     });
   }
 

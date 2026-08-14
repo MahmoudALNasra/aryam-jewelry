@@ -25,9 +25,14 @@
     sessionStorage.removeItem(SESSION);
   }
 
+  function isLoginPage() {
+    var path = location.pathname.replace(/\/+$/, "") || "/";
+    return path === "/admin" || /\/admin\/index\.html$/i.test(location.pathname);
+  }
+
   function requireAuth() {
-    if (!isAuthed() && !/index\.html?$/.test(location.pathname) && !location.pathname.endsWith("/admin/") && !location.pathname.endsWith("/admin")) {
-      location.href = "index.html";
+    if (!isAuthed() && !isLoginPage()) {
+      location.href = "/admin/";
     }
   }
 

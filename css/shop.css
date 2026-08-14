@@ -505,4 +505,12 @@ body.shop-body {
   .cart-line { grid-template-columns: 72px 1fr; }
   .cart-line .line-price { grid-column: 2; text-align: left; }
   .shop-nav a.hide-sm { display: none; }
+  .shop-hero h1 { font-size: clamp(1.8rem, 8vw, 2.4rem); }
+  .shop-filters { gap: 0.45rem; margin-top: 1.25rem; }
+  .filter-chip { padding: 0.55rem 0.9rem; min-height: 40px; font-size: 0.82rem; }
+  .pdp-actions { flex-direction: column; align-items: stretch; }
+  .pdp-actions .btn { width: 100%; min-height: 48px; }
+  .qty-input { justify-content: center; }
+  .cart-page .btn, .checkout-page .btn { min-height: 48px; width: 100%; }
+  .form-grid input, .form-grid textarea { font-size: 16px; min-height: 48px; }
 }

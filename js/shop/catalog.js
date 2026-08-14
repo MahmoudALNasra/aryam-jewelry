@@ -114,7 +114,6 @@
   function saveProduct(product) {
     var sb = client();
     var row = normalize(product);
-    if (!row.id) row.id = "local-" + Date.now();
     if (!row.slug) {
       row.slug = (row.title || "piece")
         .toLowerCase()
@@ -122,21 +121,29 @@
         .replace(/(^-|-$)/g, "") + "-" + String(Date.now()).slice(-4);
     }
 
+    var isTempId = !row.id ||
+      String(row.id).indexOf("seed-") === 0 ||
+      String(row.id).indexOf("local-") === 0 ||
+      String(row.id).indexOf("ary-") === 0;
+
     if (sb) {
-      var payload = Object.assign({}, row);
-      delete payload.id;
-      if (String(row.id).indexOf("seed-") === 0 || String(row.id).indexOf("local-") === 0) {
-        return sb.from("products").insert(row).select().single().then(function (res) {
+      if (isTempId) {
+        var insertRow = Object.assign({}, row);
+        delete insertRow.id;
+        return sb.from("products").insert(insertRow).select().single().then(function (res) {
           if (res.error) throw res.error;
           return normalize(res.data);
         });
       }
+      var payload = Object.assign({}, row);
+      delete payload.id;
       return sb.from("products").update(payload).eq("id", row.id).select().single().then(function (res) {
         if (res.error) throw res.error;
         return normalize(res.data);
       });
     }
 
+    if (!row.id) row.id = "local-" + Date.now();
     return loadLocalOrSeed(true).then(function (list) {
       var idx = list.findIndex(function (p) { return p.id === row.id; });
       if (idx >= 0) list[idx] = row;

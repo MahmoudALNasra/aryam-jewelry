@@ -58,7 +58,14 @@ python scripts\prepare_products.py
 Then open Admin → **Reset to seed data** (or hard-refresh) so the browser picks up the new catalog.
 Instagram on the photos: [@aryamjewelry0](https://www.instagram.com/aryamjewelry0/).
 
-## Going live with Supabase + Stripe
+## Photo uploads (admin)
+
+1. In Supabase → **Storage** → create a public bucket named `product-images`.
+2. Run [`supabase/storage.sql`](supabase/storage.sql) in the SQL editor.
+3. On your phone open `/admin/` → **Add piece** → **Camera / gallery**.
+
+Photos are compressed in the browser, then uploaded to Storage. If Storage isn’t set up yet, a local preview is still saved so you can keep working.
+
 
 1. Create a Supabase project → run `supabase/schema.sql`.  
 2. Create public Storage bucket `product-images` if uploading there.  
