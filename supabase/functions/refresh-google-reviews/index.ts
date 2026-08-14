@@ -48,12 +48,14 @@ Deno.serve(async (req) => {
       text?: string;
       profile_photo_url?: string;
       relative_time_description?: string;
+      time?: number;
     }) => ({
       author_name: r.author_name || "Google reviewer",
       rating: r.rating || 5,
       text: r.text || "",
       profile_photo_url: r.profile_photo_url || null,
       relative_time_description: r.relative_time_description || "Google review",
+      time: typeof r.time === "number" ? r.time : null,
     }));
 
     const payload = {

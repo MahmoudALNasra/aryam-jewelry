@@ -2,7 +2,7 @@
 (function () {
   "use strict";
 
-  var CACHE_KEY = "aryamGoogleReviewsV1";
+  var CACHE_KEY = "aryamGoogleReviewsV2";
   var DAY_MS = 24 * 60 * 60 * 1000;
   var grid = document.getElementById("reviewsGrid");
   if (!grid) return;
@@ -24,6 +24,31 @@
     if (review.profile_photo_url) return review.profile_photo_url;
     var name = encodeURIComponent(review.author_name || "Guest");
     return "https://ui-avatars.com/api/?name=" + name + "&background=1a1612&color=d4af37&size=128&bold=true";
+  }
+
+  /** e.g. "2 hours ago", "3 days ago" — from Unix time or Google's relative_time_description */
+  function formatRelativeTime(review) {
+    var ts = review.time != null ? Number(review.time) : NaN;
+    if (!isNaN(ts) && ts > 0) {
+      // Google Places uses seconds; accept ms too
+      if (ts < 1e12) ts = ts * 1000;
+      var diff = Math.max(0, Date.now() - ts);
+      var sec = Math.floor(diff / 1000);
+      var min = Math.floor(sec / 60);
+      var hr = Math.floor(min / 60);
+      var day = Math.floor(hr / 24);
+      var week = Math.floor(day / 7);
+      var month = Math.floor(day / 30);
+      var year = Math.floor(day / 365);
+      if (sec < 60) return "just now";
+      if (min < 60) return min === 1 ? "1 minute ago" : min + " minutes ago";
+      if (hr < 24) return hr === 1 ? "1 hour ago" : hr + " hours ago";
+      if (day < 7) return day === 1 ? "1 day ago" : day + " days ago";
+      if (week < 5) return week === 1 ? "1 week ago" : week + " weeks ago";
+      if (month < 12) return month === 1 ? "1 month ago" : month + " months ago";
+      return year === 1 ? "1 year ago" : year + " years ago";
+    }
+    return review.relative_time_description || "Google review";
   }
 
   function render(payload) {
@@ -62,7 +87,7 @@
           "<figcaption>" +
             '<img class="review-avatar" src="' + esc(avatarUrl(r)) + '" alt="" width="44" height="44" loading="lazy" referrerpolicy="no-referrer" />' +
             '<div class="who"><strong>' + esc(r.author_name || "Google reviewer") + "</strong>" +
-            "<span>" + esc(r.relative_time_description || "Google review") + "</span></div>" +
+            '<span class="review-when">' + esc(formatRelativeTime(r)) + "</span></div>" +
           "</figcaption>" +
         "</figure>"
       );

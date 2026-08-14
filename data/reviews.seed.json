@@ -8,21 +8,24 @@
       "rating": 5,
       "text": "Great customer service they even offer me coffee and chocolates.",
       "profile_photo_url": "https://ui-avatars.com/api/?name=Yasmin+Ghalayini&background=1a1612&color=d4af37&size=128&bold=true",
-      "relative_time_description": "Google review"
+      "relative_time_description": "2 weeks ago",
+      "time": 1754064000
     },
     {
       "author_name": "Adam Balghit",
       "rating": 5,
       "text": "They have a great selection and very kind staff.",
       "profile_photo_url": "https://ui-avatars.com/api/?name=Adam+Balghit&background=1a1612&color=d4af37&size=128&bold=true",
-      "relative_time_description": "Google review"
+      "relative_time_description": "1 month ago",
+      "time": 1751472000
     },
     {
       "author_name": "Zee",
       "rating": 5,
       "text": "Great prices and very very professional service.",
       "profile_photo_url": "https://ui-avatars.com/api/?name=Zee&background=1a1612&color=d4af37&size=128&bold=true",
-      "relative_time_description": "Google review"
+      "relative_time_description": "2 months ago",
+      "time": 1748880000
     }
   ]
 }
