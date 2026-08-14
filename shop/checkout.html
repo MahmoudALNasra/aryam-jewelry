@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Checkout | Aryam's Jewelry</title>
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#0b0a08" />
+  <link rel="icon" type="image/svg+xml" href="../images/favicon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=Manrope:wght@300;400;500;600;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/shop.css" />
+</head>
+<body class="shop-body">
+  <header class="shop-top">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">
+        <span class="brand-en">ARYAM&rsquo;S <em>JEWELRY</em></span>
+        <span class="brand-ar" lang="ar" dir="rtl">مجوهرات أريام</span>
+      </a>
+      <nav class="shop-nav">
+        <a href="cart.html">Back to cart</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="checkout-page">
+    <h1>Checkout</h1>
+    <div id="checkoutNotice" class="notice">Preparing checkout…</div>
+    <div id="checkoutSummary" class="cart-summary" style="margin-bottom:1.5rem"></div>
+
+    <form id="checkoutForm" class="form-grid">
+      <label>Full name
+        <input name="name" required autocomplete="name" />
+      </label>
+      <label>Email
+        <input name="email" type="email" required autocomplete="email" />
+      </label>
+      <label>Phone
+        <input name="phone" type="tel" required autocomplete="tel" placeholder="(832) …" />
+      </label>
+      <label>Notes (pickup preference, etc.)
+        <textarea name="notes" rows="3"></textarea>
+      </label>
+      <button class="btn btn-gold" type="submit">Place demo order</button>
+      <p style="color:var(--muted);font-size:0.85rem;margin:0">
+        Prefer to buy in person? <a href="tel:+18327627620">Call (832) 762-7620</a> or
+        <a href="https://maps.app.goo.gl/hD6xfHHKVSbvvXcBA" target="_blank" rel="noopener">get directions</a>.
+      </p>
+    </form>
+  </main>
+
+  <script src="../js/shop/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/shop/pricing.js"></script>
+  <script src="../js/shop/catalog.js" data-seed-base="../data/products.seed.json"></script>
+  <script src="../js/shop/cart.js"></script>
+  <script src="../js/shop/checkout-ui.js"></script>
+</body>
+</html>
