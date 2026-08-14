@@ -317,6 +317,14 @@ body.admin-body {
   font-weight: 600;
 }
 
+.optional {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 0.78rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 .field-error {
   display: none;
   color: #e8a0a0;

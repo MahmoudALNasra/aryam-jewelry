@@ -109,9 +109,6 @@
           <label>Slug (URL)
             <input name="slug" placeholder="auto if blank" autocomplete="off" />
           </label>
-          <label>SKU
-            <input name="sku" placeholder="ARY-…" autocomplete="off" />
-          </label>
           <label class="full">Description (EN)
             <textarea name="description" rows="3"></textarea>
           </label>
@@ -160,6 +157,9 @@
           <label>Stock qty <span class="req" aria-hidden="true">*</span>
             <input name="stock_qty" type="number" inputmode="numeric" step="1" min="0" value="1" required data-validate="stock" />
             <span class="field-error" hidden>Stock must be 0 or more.</span>
+          </label>
+          <label class="full">SKU <span class="optional">(optional · auto from name + grams)</span>
+            <input name="sku" placeholder="Auto-filled from title + grams" autocomplete="off" />
           </label>
           <label class="full checkbox-row">
             <input name="published" type="checkbox" checked />

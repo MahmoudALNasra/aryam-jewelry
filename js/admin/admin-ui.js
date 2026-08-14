@@ -222,7 +222,7 @@
     var f = editor;
     f.id.value = product ? product.id : "";
     f.slug.value = product ? product.slug : "";
-    f.sku.value = product ? product.sku : "";
+    f.sku.value = product ? (product.sku || "") : "";
     f.title.value = product ? product.title : "";
     f.title_ar.value = product ? product.title_ar : "";
     f.description.value = product ? product.description : "";
@@ -252,7 +252,37 @@
       var lab = el.closest("label");
       if (lab) lab.classList.remove("is-invalid");
     });
+    skuManual = !!(product && product.sku);
+    if (!skuManual) refreshSku(true);
     updatePreview();
+  }
+
+  function buildAutoSku() {
+    var title = (editor.title.value || "").trim();
+    var gramsRaw = String(editor.weight_grams.value || "").trim();
+    var karat = String(editor.karat.value || "21");
+    var namePart = title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
+      .slice(0, 28);
+    var gramsPart = "";
+    if (gramsRaw !== "" && isFinite(Number(gramsRaw)) && Number(gramsRaw) > 0) {
+      gramsPart = Number(gramsRaw).toFixed(3).replace(/\.?0+$/, "") + "g";
+    }
+    var parts = ["ARY", karat + "K"];
+    if (gramsPart) parts.push(gramsPart);
+    if (namePart) parts.push(namePart);
+    return parts.join("-").toUpperCase();
+  }
+
+  var skuManual = false;
+
+  function refreshSku(force) {
+    if (!editor || !editor.sku) return;
+    if (!force && skuManual) return;
+    var next = buildAutoSku();
+    editor.sku.value = next === "ARY-21K" ? "" : next;
   }
 
   function updatePreview() {
@@ -294,6 +324,22 @@
   if (editor) {
     ["weight_grams", "sell_price_per_gram", "making_charge", "karat"].forEach(function (name) {
       editor[name].addEventListener("input", updatePreview);
+    });
+
+    ["title", "weight_grams", "karat"].forEach(function (name) {
+      editor[name].addEventListener("input", function () { refreshSku(false); });
+      editor[name].addEventListener("change", function () { refreshSku(false); });
+    });
+
+    editor.sku.addEventListener("input", function () {
+      skuManual = editor.sku.value.trim().length > 0;
+      if (!skuManual) refreshSku(true);
+    });
+    editor.sku.addEventListener("blur", function () {
+      if (!editor.sku.value.trim()) {
+        skuManual = false;
+        refreshSku(true);
+      }
     });
 
     document.getElementById("btnNew").addEventListener("click", function () {
