@@ -37,12 +37,16 @@
     var price = AryamPricing.displayPrice(p);
     var img = p.image_url || "/images/hero.jpg";
     if (img.indexOf("../") === 0) img = "/" + img.replace(/^\.\.\//, "");
+    if (typeof AryamMedia !== "undefined") img = AryamMedia.displayUrl(img, "detail");
+    var imgFull = (typeof AryamMedia !== "undefined")
+      ? AryamMedia.displayUrl(p.image_url || img, "full")
+      : img;
     var inStock = p.stock_qty > 0;
 
     root.innerHTML =
       '<div class="pdp-gallery">' +
         '<div class="pdp-frame" id="zoomFrame" title="Click to enlarge">' +
-          '<img id="zoomImg" src="' + img + '" alt="' + escapeHtml(p.title) + '" />' +
+          '<img id="zoomImg" src="' + img + '" data-full="' + imgFull + '" alt="' + escapeHtml(p.title) + '" />' +
         "</div>" +
         '<p class="pdp-hint">Hover to inspect detail · click to open full size</p>' +
       "</div>" +
@@ -80,7 +84,7 @@
       "</div>" +
       '<div class="lightbox" id="lightbox" role="dialog" aria-modal="true">' +
         '<button type="button" id="lbClose" aria-label="Close">×</button>' +
-        '<img src="' + img + '" alt="" />' +
+        '<img src="' + imgFull + '" alt="" />' +
       "</div>";
 
     setupZoom();

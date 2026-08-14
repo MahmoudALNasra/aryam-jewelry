@@ -91,7 +91,7 @@
             </div>
             <p class="upload-status" id="uploadStatus"></p>
           </div>
-          <p class="photo-hint">Take photo = camera. Choose from gallery = your library. Photos stay high quality (up to 4K) with an upload progress bar for larger files.</p>
+          <p class="photo-hint">Take photo = camera. Choose from gallery = your library. High-quality upload (up to 4K) with progress — prefers Cloudinary CDN, falls back to Supabase Storage.</p>
         </div>
 
         <div class="editor-grid">
@@ -174,6 +174,7 @@
   </div>
 
   <script src="/js/shop/config.js"></script>
+  <script src="/js/shop/media.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.8/dist/umd/supabase.min.js"></script>
   <script src="/js/shop/pricing.js"></script>
   <script src="/js/shop/catalog.js" data-seed-base="/data/products.seed.json"></script>

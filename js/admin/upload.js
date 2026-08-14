@@ -1,4 +1,4 @@
-/* High-quality product photos + Supabase Storage upload with progress */
+/* High-quality product photos → Cloudinary (preferred) or Supabase Storage */
 (function (global) {
   "use strict";
 
@@ -9,6 +9,10 @@
   /* Skip re-encode when already a solid JPEG under these limits */
   var KEEP_ORIGINAL_MAX_BYTES = 12 * 1024 * 1024;
 
+  function cfg() {
+    return global.ARYAM_CONFIG || {};
+  }
+
   function formatBytes(n) {
     if (!n && n !== 0) return "";
     if (n < 1024) return n + " B";
@@ -18,6 +22,16 @@
 
   function report(onProgress, payload) {
     if (typeof onProgress === "function") onProgress(payload);
+  }
+
+  function hasCloudinary() {
+    var c = cfg();
+    return !!(c.cloudinaryCloudName && c.cloudinaryUploadPreset);
+  }
+
+  function hasSupabaseStorage() {
+    var c = cfg();
+    return !!(c.supabaseUrl && c.supabaseAnonKey);
   }
 
   function loadImage(file) {
@@ -126,10 +140,74 @@
     return safe + "-" + Date.now() + ".jpg";
   }
 
-  function uploadWithProgress(blob, path, onProgress) {
-    var cfg = global.ARYAM_CONFIG || {};
-    var base = (cfg.supabaseUrl || "").replace(/\/$/, "");
-    var key = cfg.supabaseAnonKey || "";
+  function trackUploadProgress(xhr, onProgress, label) {
+    xhr.upload.onprogress = function (e) {
+      if (!e.lengthComputable) {
+        report(onProgress, {
+          phase: "uploading",
+          percent: 55,
+          message: (label || "Uploading") + "…"
+        });
+        return;
+      }
+      var ratio = e.loaded / e.total;
+      var percent = Math.round(40 + ratio * 55);
+      report(onProgress, {
+        phase: "uploading",
+        percent: percent,
+        message: (label || "Uploading") + " " + formatBytes(e.loaded) + " / " + formatBytes(e.total),
+        loaded: e.loaded,
+        total: e.total
+      });
+    };
+  }
+
+  function uploadToCloudinary(blob, path, onProgress) {
+    var c = cfg();
+    var cloud = c.cloudinaryCloudName;
+    var preset = c.cloudinaryUploadPreset;
+    var folder = c.cloudinaryFolder || "aryam/products";
+    var url = "https://api.cloudinary.com/v1_1/" + encodeURIComponent(cloud) + "/image/upload";
+
+    var fd = new FormData();
+    fd.append("file", blob, path);
+    fd.append("upload_preset", preset);
+    fd.append("folder", folder);
+    fd.append("public_id", path.replace(/\.jpe?g$/i, ""));
+
+    return new Promise(function (resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", url);
+      trackUploadProgress(xhr, onProgress, "Cloudinary");
+
+      xhr.onload = function () {
+        var data = null;
+        try { data = JSON.parse(xhr.responseText || "{}"); } catch (e) { data = {}; }
+        if (xhr.status >= 200 && xhr.status < 300 && data.secure_url) {
+          report(onProgress, {
+            phase: "done",
+            percent: 100,
+            message: "Uploaded to Cloudinary"
+          });
+          resolve(data.secure_url);
+          return;
+        }
+        var detail = (data && (data.error && data.error.message)) || data.message || xhr.statusText || ("HTTP " + xhr.status);
+        reject(new Error(detail));
+      };
+
+      xhr.onerror = function () {
+        reject(new Error("Network error during Cloudinary upload"));
+      };
+
+      xhr.send(fd);
+    });
+  }
+
+  function uploadToSupabase(blob, path, onProgress) {
+    var c = cfg();
+    var base = (c.supabaseUrl || "").replace(/\/$/, "");
+    var key = c.supabaseAnonKey || "";
     if (!base || !key) {
       return Promise.reject(new Error("Supabase not configured"));
     }
@@ -143,36 +221,16 @@
       xhr.setRequestHeader("Authorization", "Bearer " + key);
       xhr.setRequestHeader("Content-Type", "image/jpeg");
       xhr.setRequestHeader("x-upsert", "true");
-
-      xhr.upload.onprogress = function (e) {
-        if (!e.lengthComputable) {
-          report(onProgress, {
-            phase: "uploading",
-            percent: 55,
-            message: "Uploading…"
-          });
-          return;
-        }
-        var ratio = e.loaded / e.total;
-        var percent = Math.round(40 + ratio * 55);
-        report(onProgress, {
-          phase: "uploading",
-          percent: percent,
-          message: "Uploading " + formatBytes(e.loaded) + " / " + formatBytes(e.total),
-          loaded: e.loaded,
-          total: e.total
-        });
-      };
+      trackUploadProgress(xhr, onProgress, "Supabase");
 
       xhr.onload = function () {
         if (xhr.status >= 200 && xhr.status < 300) {
           report(onProgress, {
             phase: "done",
             percent: 100,
-            message: "Upload complete"
+            message: "Uploaded to Supabase Storage"
           });
-          var publicUrl = base + "/storage/v1/object/public/" + BUCKET + "/" + path;
-          resolve(publicUrl);
+          resolve(base + "/storage/v1/object/public/" + BUCKET + "/" + path);
           return;
         }
         var detail = xhr.responseText || xhr.statusText || ("HTTP " + xhr.status);
@@ -180,7 +238,7 @@
       };
 
       xhr.onerror = function () {
-        reject(new Error("Network error during upload"));
+        reject(new Error("Network error during Supabase upload"));
       };
 
       xhr.send(blob);
@@ -191,26 +249,30 @@
     var path = safePath(slugHint);
 
     return compressFile(file, onProgress).then(function (blob) {
-      var sbReady = !!(global.ARYAM_CONFIG && global.ARYAM_CONFIG.supabaseUrl && global.ARYAM_CONFIG.supabaseAnonKey);
+      var tryCloud = hasCloudinary()
+        ? uploadToCloudinary(blob, path, onProgress)
+        : Promise.reject(new Error("Cloudinary not configured"));
 
-      if (sbReady) {
-        return uploadWithProgress(blob, path, onProgress).catch(function (err) {
-          console.warn("Storage upload failed, using local preview URL:", err);
+      return tryCloud.catch(function (cloudErr) {
+        if (hasCloudinary()) {
+          console.warn("Cloudinary upload failed, trying Supabase Storage:", cloudErr);
           report(onProgress, {
-            phase: "fallback",
-            percent: 90,
-            message: "Cloud upload failed — saving local preview…"
+            phase: "uploading",
+            percent: 42,
+            message: "Cloudinary unavailable — trying Supabase…"
           });
-          return blobToDataUrl(blob);
+        }
+        if (!hasSupabaseStorage()) throw cloudErr;
+        return uploadToSupabase(blob, path, onProgress);
+      }).catch(function (err) {
+        console.warn("Cloud upload failed, using local preview URL:", err);
+        report(onProgress, {
+          phase: "fallback",
+          percent: 90,
+          message: "Cloud upload failed — saving local preview…"
         });
-      }
-
-      report(onProgress, {
-        phase: "fallback",
-        percent: 90,
-        message: "Saving local preview…"
+        return blobToDataUrl(blob);
       });
-      return blobToDataUrl(blob);
     });
   }
 
@@ -218,6 +280,7 @@
     compressFile: compressFile,
     uploadProductImage: uploadProductImage,
     formatBytes: formatBytes,
+    hasCloudinary: hasCloudinary,
     BUCKET: BUCKET,
     MAX_SIDE: MAX_SIDE,
     JPEG_QUALITY: JPEG_QUALITY

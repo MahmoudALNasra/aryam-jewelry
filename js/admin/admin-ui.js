@@ -110,6 +110,7 @@
   function imgSrc(p) {
     var u = (p && p.image_url) || "/images/hero.jpg";
     if (u.indexOf("../") === 0) u = "/" + u.replace(/^\.\.\//, "");
+    if (typeof AryamMedia !== "undefined") return AryamMedia.displayUrl(u, "thumb");
     return u;
   }
 
