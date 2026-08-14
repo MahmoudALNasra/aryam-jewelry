@@ -299,6 +299,50 @@ body.admin-body {
   width: 100%;
 }
 
+.editor-grid input.is-invalid,
+.editor-grid textarea.is-invalid,
+.editor-grid select.is-invalid {
+  border-color: #c45c5c;
+  box-shadow: 0 0 0 1px rgba(196, 92, 92, 0.35);
+}
+
+.editor-grid input.is-valid,
+.editor-grid textarea.is-valid,
+.editor-grid select.is-valid {
+  border-color: rgba(212, 175, 55, 0.55);
+}
+
+.req {
+  color: #e8a0a0;
+  font-weight: 600;
+}
+
+.field-error {
+  display: none;
+  color: #e8a0a0;
+  font-size: 0.78rem;
+  margin: 0;
+}
+
+label.is-invalid .field-error,
+.photo-upload.is-invalid .field-error {
+  display: block;
+}
+
+.form-error {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid rgba(196, 92, 92, 0.45);
+  background: rgba(196, 92, 92, 0.12);
+  color: #f0c4c4;
+  font-size: 0.9rem;
+}
+
+.form-error[hidden] {
+  display: none;
+}
+
 .editor-grid textarea { min-height: 96px; resize: vertical; }
 
 .editor-grid label.checkbox-row {

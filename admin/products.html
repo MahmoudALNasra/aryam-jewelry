@@ -70,11 +70,12 @@
         </table>
       </div>
 
-      <form id="productEditor" class="login-card" hidden>
+      <form id="productEditor" class="login-card" hidden novalidate>
         <h2 id="editorTitle" style="font-family:var(--font-display);margin:0 0 1rem;font-size:1.35rem">New piece</h2>
         <input type="hidden" name="id" />
         <input type="hidden" name="image_url" id="imageUrlField" />
         <input type="hidden" name="image_urls" id="imageUrlsField" value="[]" />
+        <p class="form-error" id="formError" hidden></p>
 
         <div class="photo-upload full" style="margin-bottom:1.25rem">
           <div class="photo-preview" id="photoPreview">Tap below to add photos</div>
@@ -94,11 +95,13 @@
             <p class="upload-status" id="uploadStatus"></p>
           </div>
           <p class="photo-hint">Add multiple angles (up to 8). First photo is the cover. Cloudinary first, Supabase Storage fallback.</p>
+          <p class="field-error" id="photoError" hidden>Add at least one photo before publishing.</p>
         </div>
 
         <div class="editor-grid">
-          <label>Title (EN)
-            <input name="title" required autocomplete="off" />
+          <label>Title (EN) <span class="req" aria-hidden="true">*</span>
+            <input name="title" required autocomplete="off" data-validate="required" />
+            <span class="field-error" hidden>Title is required.</span>
           </label>
           <label>Title (AR)
             <input name="title_ar" lang="ar" dir="rtl" autocomplete="off" />
@@ -121,8 +124,8 @@
           <label class="full">SEO description
             <textarea name="seo_description" rows="2"></textarea>
           </label>
-          <label>Category
-            <select name="category">
+          <label>Category <span class="req" aria-hidden="true">*</span>
+            <select name="category" required data-validate="category">
               <option value="bridal">Bridal</option>
               <option value="bangles">Bangles</option>
               <option value="necklaces">Necklaces</option>
@@ -131,26 +134,32 @@
               <option value="earrings">Earrings</option>
               <option value="other">Other</option>
             </select>
+            <span class="field-error" hidden>Choose a valid category.</span>
           </label>
-          <label>Karat
-            <select name="karat">
+          <label>Karat <span class="req" aria-hidden="true">*</span>
+            <select name="karat" required data-validate="karat">
               <option value="18">18K</option>
               <option value="21" selected>21K</option>
               <option value="22">22K</option>
               <option value="24">24K</option>
             </select>
+            <span class="field-error" hidden>Choose 18, 21, 22, or 24K.</span>
           </label>
-          <label>Weight (grams)
-            <input name="weight_grams" type="number" inputmode="decimal" step="0.001" min="0.001" required />
+          <label>Weight (grams) <span class="req" aria-hidden="true">*</span>
+            <input name="weight_grams" type="number" inputmode="decimal" step="0.001" min="0.001" required data-validate="weight" />
+            <span class="field-error" hidden>Enter weight greater than 0.</span>
           </label>
-          <label>Sell price $/gram
-            <input name="sell_price_per_gram" type="number" inputmode="decimal" step="0.01" min="0" required />
+          <label>Sell price $/gram <span class="req" aria-hidden="true">*</span>
+            <input name="sell_price_per_gram" type="number" inputmode="decimal" step="0.01" min="0" required data-validate="price" />
+            <span class="field-error" hidden>Enter sell price per gram (0 or more).</span>
           </label>
           <label>Making charge ($)
-            <input name="making_charge" type="number" inputmode="decimal" step="0.01" min="0" value="0" />
+            <input name="making_charge" type="number" inputmode="decimal" step="0.01" min="0" value="0" data-validate="making" />
+            <span class="field-error" hidden>Making charge cannot be negative.</span>
           </label>
-          <label>Stock qty
-            <input name="stock_qty" type="number" inputmode="numeric" step="1" min="0" value="1" required />
+          <label>Stock qty <span class="req" aria-hidden="true">*</span>
+            <input name="stock_qty" type="number" inputmode="numeric" step="1" min="0" value="1" required data-validate="stock" />
+            <span class="field-error" hidden>Stock must be 0 or more.</span>
           </label>
           <label class="full checkbox-row">
             <input name="published" type="checkbox" checked />

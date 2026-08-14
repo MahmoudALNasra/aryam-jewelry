@@ -51,7 +51,7 @@
     return {
       id: p.id,
       slug: p.slug,
-      sku: p.sku || "",
+      sku: p.sku ? String(p.sku).trim() : "",
       title: p.title,
       title_ar: p.title_ar || "",
       description: p.description || "",
@@ -137,11 +137,21 @@
   function saveProduct(product) {
     var sb = client();
     var row = normalize(product);
+    if (!row.sku) row.sku = null;
     if (!row.slug) {
       row.slug = (row.title || "piece")
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "") + "-" + String(Date.now()).slice(-4);
+    }
+    if (!(Number(row.weight_grams) > 0)) {
+      return Promise.reject(new Error("Weight must be greater than 0"));
+    }
+    if (!(Number(row.sell_price_per_gram) >= 0)) {
+      return Promise.reject(new Error("Sell price per gram is invalid"));
+    }
+    if ([18, 21, 22, 24].indexOf(Number(row.karat)) < 0) {
+      return Promise.reject(new Error("Karat must be 18, 21, 22, or 24"));
     }
 
     var isTempId = !row.id ||

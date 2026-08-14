@@ -67,17 +67,19 @@ create trigger products_updated_at
 alter table public.products enable row level security;
 alter table public.orders enable row level security;
 
--- Public can read published products
+-- Anon key is used by the storefront + password-gated admin UI
 drop policy if exists "Public read published products" on public.products;
-create policy "Public read published products"
+drop policy if exists "Anon read all products" on public.products;
+create policy "Anon read all products"
   on public.products for select
-  using (published = true);
+  to anon, authenticated
+  using (true);
 
--- Authenticated admins full access to products
 drop policy if exists "Admin full products" on public.products;
-create policy "Admin full products"
+drop policy if exists "Anon manage products" on public.products;
+create policy "Anon manage products"
   on public.products for all
-  to authenticated
+  to anon, authenticated
   using (true)
   with check (true);
 

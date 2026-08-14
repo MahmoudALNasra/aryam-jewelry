@@ -241,6 +241,17 @@
     document.getElementById("editorTitle").textContent = product ? "Edit piece" : "New piece";
     if (uploadStatus) uploadStatus.textContent = "";
     if (uploadProgress) uploadProgress.hidden = true;
+    var fe = document.getElementById("formError");
+    if (fe) { fe.hidden = true; fe.textContent = ""; }
+    var pe = document.getElementById("photoError");
+    if (pe) pe.hidden = true;
+    var wrap = editor.querySelector(".photo-upload");
+    if (wrap) wrap.classList.remove("is-invalid");
+    Array.prototype.forEach.call(editor.querySelectorAll("[data-validate]"), function (el) {
+      el.classList.remove("is-invalid", "is-valid");
+      var lab = el.closest("label");
+      if (lab) lab.classList.remove("is-invalid");
+    });
     updatePreview();
   }
 
@@ -428,19 +439,103 @@
       });
     }
 
+    var formError = document.getElementById("formError");
+    var photoError = document.getElementById("photoError");
+    var CATEGORIES = ["bridal", "bangles", "necklaces", "rings", "coins", "earrings", "other"];
+    var KARATS = [18, 21, 22, 24];
+
+    function setFieldState(el, ok, touched) {
+      if (!el) return;
+      var label = el.closest("label");
+      el.classList.toggle("is-invalid", touched && !ok);
+      el.classList.toggle("is-valid", touched && ok);
+      if (label) label.classList.toggle("is-invalid", touched && !ok);
+    }
+
+    function validateField(el, touched) {
+      if (!el || !el.getAttribute("data-validate")) return true;
+      var kind = el.getAttribute("data-validate");
+      var raw = String(el.value == null ? "" : el.value).trim();
+      var ok = true;
+      if (kind === "required") ok = raw.length > 0;
+      else if (kind === "weight") ok = Number(raw) > 0 && isFinite(Number(raw));
+      else if (kind === "price") ok = raw !== "" && Number(raw) >= 0 && isFinite(Number(raw));
+      else if (kind === "making") ok = raw === "" || (Number(raw) >= 0 && isFinite(Number(raw)));
+      else if (kind === "stock") ok = raw !== "" && Number(raw) >= 0 && Number.isFinite(Number(raw)) && Math.floor(Number(raw)) === Number(raw);
+      else if (kind === "category") ok = CATEGORIES.indexOf(raw) >= 0;
+      else if (kind === "karat") ok = KARATS.indexOf(Number(raw)) >= 0;
+      if (touched) setFieldState(el, ok, true);
+      return ok;
+    }
+
+    function validatePhotos(touched) {
+      var urls = getImageUrls();
+      var published = !!(editor.published && editor.published.checked);
+      var ok = !published || urls.length > 0;
+      var wrap = editor.querySelector(".photo-upload");
+      if (wrap && touched) wrap.classList.toggle("is-invalid", !ok);
+      if (photoError) photoError.hidden = ok || !touched;
+      return ok;
+    }
+
+    function validateForm(touched) {
+      var ok = true;
+      var fields = editor.querySelectorAll("[data-validate]");
+      Array.prototype.forEach.call(fields, function (el) {
+        if (!validateField(el, touched)) ok = false;
+      });
+      if (!validatePhotos(touched)) ok = false;
+      return ok;
+    }
+
+    function showFormError(msg) {
+      if (!formError) return;
+      if (!msg) {
+        formError.hidden = true;
+        formError.textContent = "";
+        return;
+      }
+      formError.hidden = false;
+      formError.textContent = msg;
+    }
+
+    Array.prototype.forEach.call(editor.querySelectorAll("[data-validate]"), function (el) {
+      el.addEventListener("blur", function () { validateField(el, true); });
+      el.addEventListener("input", function () {
+        if (el.classList.contains("is-invalid") || el.classList.contains("is-valid")) {
+          validateField(el, true);
+        }
+        showFormError("");
+      });
+      el.addEventListener("change", function () {
+        validateField(el, true);
+        showFormError("");
+      });
+    });
+
+    if (editor.published) {
+      editor.published.addEventListener("change", function () {
+        validatePhotos(true);
+      });
+    }
+
     editor.addEventListener("submit", function (e) {
       e.preventDefault();
-      var urls = getImageUrls();
-      if (!urls.length) {
-        if (!confirm("No photo yet. Save anyway?")) return;
+      showFormError("");
+      if (!validateForm(true)) {
+        showFormError("Please fix the highlighted required fields before saving.");
+        var firstBad = editor.querySelector(".is-invalid");
+        if (firstBad && firstBad.scrollIntoView) firstBad.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
       }
+      var urls = getImageUrls();
       var btn = document.getElementById("btnSave");
       btn.disabled = true;
       btn.textContent = "Saving…";
       var product = {
         id: editor.id.value || undefined,
         slug: editor.slug.value.trim(),
-        sku: editor.sku.value.trim(),
+        sku: editor.sku.value.trim() || null,
         title: editor.title.value.trim(),
         title_ar: editor.title_ar.value.trim(),
         description: editor.description.value.trim(),
@@ -463,7 +558,12 @@
         if (tb) tb.hidden = false;
         loadTable();
       }).catch(function (err) {
-        alert("Save failed: " + (err.message || err));
+        var msg = (err && err.message) || String(err);
+        if (/row-level security|row level security|RLS/i.test(msg)) {
+          msg = "Save blocked by Supabase security policy. Run supabase/admin-rls.sql in the Supabase SQL Editor, then try again.";
+        }
+        showFormError("Save failed: " + msg);
+        alert("Save failed: " + msg);
       }).finally(function () {
         btn.disabled = false;
         btn.textContent = "Save piece";
