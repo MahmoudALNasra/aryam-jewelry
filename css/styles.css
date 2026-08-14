@@ -195,13 +195,25 @@ body.nav-open .site-header.scrolled {
   position: relative;
   z-index: 220;
 }
-.brand { display: flex; flex-direction: column; line-height: 1.15; }
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+  gap: 0.15rem;
+}
 .brand-en {
+  display: block;
   font-family: var(--font-display);
   font-size: 1.22rem; letter-spacing: 0.14em; color: var(--cream);
 }
 .brand-en em { font-style: italic; color: var(--gold); }
-.brand-ar { font-size: 0.85rem; color: var(--muted); }
+.brand-ar {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--gold);
+  line-height: 1.3;
+}
 
 .primary-nav { display: flex; align-items: center; gap: 1.9rem; }
 .primary-nav a {
@@ -391,7 +403,7 @@ section { padding-block: clamp(4.5rem, 9vw, 7.5rem); }
 section[id] { scroll-margin-top: 84px; }
 
 /* Grid children may not force the page wider than the viewport */
-.gold-grid > *, .visit-grid > *, .about-grid > *, .footer-grid > *, .review-grid > * { min-width: 0; }
+.gold-grid > *, .visit-grid > *, .about-grid > *, .footer-grid > *, .review-carousel > * { min-width: 0; }
 
 .section-head { max-width: 760px; margin-bottom: clamp(2.5rem, 5vw, 4rem); }
 .eyebrow {
@@ -640,18 +652,28 @@ td.price.flash { animation: price-flash 0.9s ease; }
     radial-gradient(50% 40% at 30% 100%, rgba(212, 175, 55, 0.06) 0%, transparent 100%),
     var(--bg);
 }
-.review-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: clamp(1.2rem, 2.5vw, 2rem);
+.review-carousel {
+  position: relative;
+  overflow: hidden;
 }
 .review-card {
   position: relative;
   margin: 0;
-  padding: 2rem 1.8rem 1.7rem;
+  padding: 2rem 1.8rem 1.5rem;
   background: linear-gradient(165deg, var(--panel), rgba(255, 255, 255, 0.012));
   border: 1px solid var(--line);
   border-radius: var(--radius);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 280px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.25s ease, transform 0.25s ease;
+}
+a.review-card:hover {
+  border-color: rgba(212, 175, 55, 0.45);
+  transform: translateY(-2px);
 }
 .review-card::before {
   content: "\201C";
@@ -662,16 +684,31 @@ td.price.flash { animation: price-flash 0.9s ease; }
   pointer-events: none;
 }
 .review-card .stars { font-size: 0.95rem; margin-bottom: 0.9rem; color: var(--gold); letter-spacing: 0.12em; }
-.review-card blockquote {
-  margin: 0 0 1.3rem;
+.review-card .review-quote {
+  margin: 0;
+  flex: 1;
   font-family: var(--font-display); font-style: italic;
-  font-size: 1.12rem; line-height: 1.5;
+  font-size: 1.08rem; line-height: 1.5;
   color: var(--cream);
 }
+.review-card .review-more {
+  display: inline-block;
+  margin: 0.65rem 0 1rem;
+  font-family: var(--font-body);
+  font-style: normal;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.review-card .review-more[hidden] { display: none; }
+.review-card .review-by,
 .review-card figcaption {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  margin-top: auto;
 }
 .review-avatar {
   width: 44px;
@@ -685,6 +722,27 @@ td.price.flash { animation: price-flash 0.9s ease; }
 .review-card figcaption .who { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
 .review-card figcaption strong { font-size: 0.95rem; color: var(--gold-2); }
 .review-card figcaption span { font-size: 0.8rem; color: var(--muted); }
+
+.review-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.45rem;
+  margin-top: 1.5rem;
+}
+.review-dots button {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(212, 175, 55, 0.28);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.review-dots button[aria-current="true"] {
+  background: var(--gold);
+  transform: scale(1.2);
+}
 
 .reviews-cta { margin-top: 2.6rem; text-align: center; display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; }
 
@@ -800,8 +858,23 @@ td.price.flash { animation: price-flash 0.9s ease; }
   gap: clamp(2rem, 4vw, 3rem);
   padding-bottom: 3rem;
 }
-.footer-brand .brand-en { font-size: 1.35rem; }
-.footer-brand .brand-ar { font-size: 1.05rem; color: var(--gold); margin: 0.2rem 0 0.9rem; }
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.footer-brand .brand-en {
+  display: block;
+  font-size: 1.35rem;
+  margin: 0;
+}
+.footer-brand .brand-ar {
+  display: block;
+  font-size: 1.05rem;
+  color: var(--gold);
+  margin: 0.35rem 0 0.9rem;
+  line-height: 1.35;
+}
 .footer-brand p { margin: 0; }
 .footer-tag { color: var(--muted); font-size: 0.9rem; font-weight: 300; max-width: 30ch; }
 
@@ -888,7 +961,10 @@ td.price.flash { animation: price-flash 0.9s ease; }
   .gold-grid, .visit-grid { grid-template-columns: 1fr; }
   .about-grid { grid-template-columns: 1fr; gap: 3.5rem; }
   .about-badge { right: 1rem; bottom: -1.1rem; }
-  .review-grid { grid-template-columns: 1fr; max-width: 560px; margin-inline: auto; }
+  .review-card {
+    min-height: 260px;
+  }
+  .review-carousel { max-width: 560px; margin-inline: auto; }
 
   .footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.2rem 1.5rem; }
   .footer-brand { grid-column: 1 / -1; }
@@ -926,7 +1002,7 @@ td.price.flash { animation: price-flash 0.9s ease; }
   .footer-hours p, .footer-contact p, .footer-contact address, .footer-links a { font-size: 0.88rem; }
   .tradingview-widget-container { min-height: 340px; }
   .tradingview-widget-container__widget { min-height: 300px; }
-  .review-card { padding: 1.4rem 1.15rem; }
+  .review-card { padding: 1.4rem 1.15rem; min-height: 240px; }
   .about-badge { right: 0.5rem; padding: 0.75rem 1rem; }
 }
 

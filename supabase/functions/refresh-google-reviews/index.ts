@@ -44,6 +44,7 @@ Deno.serve(async (req) => {
     const result = placesJson.result;
     const reviews = (result.reviews || []).map((r: {
       author_name?: string;
+      author_url?: string;
       rating?: number;
       text?: string;
       profile_photo_url?: string;
@@ -51,6 +52,7 @@ Deno.serve(async (req) => {
       time?: number;
     }) => ({
       author_name: r.author_name || "Google reviewer",
+      author_url: r.author_url || null,
       rating: r.rating || 5,
       text: r.text || "",
       profile_photo_url: r.profile_photo_url || null,
