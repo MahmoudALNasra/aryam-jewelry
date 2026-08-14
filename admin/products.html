@@ -103,24 +103,6 @@
             <input name="title" required autocomplete="off" data-validate="required" />
             <span class="field-error" hidden>Title is required.</span>
           </label>
-          <label>Title (AR)
-            <input name="title_ar" lang="ar" dir="rtl" autocomplete="off" />
-          </label>
-          <label>Slug (URL)
-            <input name="slug" placeholder="auto if blank" autocomplete="off" />
-          </label>
-          <label class="full">Description (EN)
-            <textarea name="description" rows="3"></textarea>
-          </label>
-          <label class="full">Description (AR)
-            <textarea name="description_ar" rows="2" lang="ar" dir="rtl"></textarea>
-          </label>
-          <label class="full">SEO title
-            <input name="seo_title" autocomplete="off" />
-          </label>
-          <label class="full">SEO description
-            <textarea name="seo_description" rows="2"></textarea>
-          </label>
           <label>Category <span class="req" aria-hidden="true">*</span>
             <select name="category" required data-validate="category">
               <option value="bridal">Bridal</option>
@@ -150,13 +132,34 @@
             <input name="sell_price_per_gram" type="number" inputmode="decimal" step="0.01" min="0" required data-validate="price" />
             <span class="field-error" hidden>Enter sell price per gram (0 or more).</span>
           </label>
-          <label>Making charge ($)
-            <input name="making_charge" type="number" inputmode="decimal" step="0.01" min="0" value="0" data-validate="making" />
-            <span class="field-error" hidden>Making charge cannot be negative.</span>
-          </label>
           <label>Stock qty <span class="req" aria-hidden="true">*</span>
             <input name="stock_qty" type="number" inputmode="numeric" step="1" min="0" value="1" required data-validate="stock" />
             <span class="field-error" hidden>Stock must be 0 or more.</span>
+          </label>
+
+          <p class="editor-section-label full">Optional details</p>
+
+          <label>Title (AR) <span class="optional">(optional)</span>
+            <input name="title_ar" lang="ar" dir="rtl" autocomplete="off" />
+          </label>
+          <label>Slug (URL) <span class="optional">(optional · auto if blank)</span>
+            <input name="slug" placeholder="auto if blank" autocomplete="off" />
+          </label>
+          <label>Making charge ($) <span class="optional">(optional)</span>
+            <input name="making_charge" type="number" inputmode="decimal" step="0.01" min="0" value="0" data-validate="making" />
+            <span class="field-error" hidden>Making charge cannot be negative.</span>
+          </label>
+          <label class="full">Description (EN) <span class="optional">(optional)</span>
+            <textarea name="description" rows="3"></textarea>
+          </label>
+          <label class="full">Description (AR) <span class="optional">(optional)</span>
+            <textarea name="description_ar" rows="2" lang="ar" dir="rtl"></textarea>
+          </label>
+          <label class="full">SEO title <span class="optional">(optional)</span>
+            <input name="seo_title" autocomplete="off" />
+          </label>
+          <label class="full">SEO description <span class="optional">(optional)</span>
+            <textarea name="seo_description" rows="2"></textarea>
           </label>
           <label class="full">SKU <span class="optional">(optional · auto from name + grams)</span>
             <input name="sku" placeholder="Auto-filled from title + grams" autocomplete="off" />

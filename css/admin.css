@@ -325,6 +325,16 @@ body.admin-body {
   letter-spacing: 0;
 }
 
+.editor-section-label {
+  margin: 0.85rem 0 0.15rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold-2);
+}
+
 .field-error {
   display: none;
   color: #e8a0a0;
