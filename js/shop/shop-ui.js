@@ -106,19 +106,34 @@
     var title = document.getElementById("shopTitle");
     var intro = document.getElementById("shopIntro");
     if (!title) return;
+    var shareTitle;
+    var shareDesc;
     if (state.category && state.category !== "all") {
       var label = labelCat(state.category);
       title.innerHTML = label + ' <em>Collection</em>';
       if (intro) {
         intro.textContent = "Showing " + label.toLowerCase() + " from the online catalog. Change filters anytime below.";
       }
-      document.title = label + " | Aryam's Jewelry Houston";
+      shareTitle = label + " | Aryam's Jewelry Houston";
+      shareDesc = "Shop " + label.toLowerCase() + " in 21K & 22K Arabic gold at Aryam's Jewelry Houston. Grams, karat and price on every listing.";
     } else {
       title.innerHTML = 'Shop the <em>Collection</em>';
       if (intro) {
         intro.textContent = "Ready pieces priced from the shop’s selling rate per gram — karat, weight and stock shown on every listing.";
       }
-      document.title = "Shop Arabic Gold Jewelry | Aryam's Jewelry Houston — 21K & 22K";
+      shareTitle = "Shop Arabic Gold Jewelry | Aryam's Jewelry Houston — 21K & 22K";
+      shareDesc = "Shop 21K and 22K Arabic gold jewelry online from Aryam's Jewelry in Houston — bridal sets, bangles, chains, rings and coins.";
+    }
+    if (typeof AryamSeo !== "undefined") {
+      AryamSeo.apply({
+        title: shareTitle,
+        description: shareDesc,
+        image: "/images/hero.jpg",
+        url: AryamSeo.SITE + "/shop/" + (state.category && state.category !== "all" ? "?category=" + encodeURIComponent(state.category) : ""),
+        type: "website"
+      });
+    } else {
+      document.title = shareTitle;
     }
   }
 

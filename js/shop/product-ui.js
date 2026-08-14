@@ -116,9 +116,24 @@
       return;
     }
 
-    document.title = (p.seo_title || p.title) + " | Aryam's Jewelry";
-    var metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute("content", p.seo_description || p.description || "");
+    var shareTitle = (p.seo_title || p.title) + " | Aryam's Jewelry";
+    var shareDesc = p.seo_description || p.description ||
+      (p.title + " — " + p.karat + "K · " + p.weight_grams + " g at Aryam's Jewelry Houston.");
+    var shareImage = p.image_url || (p.image_urls && p.image_urls[0]) || "/images/hero.jpg";
+    if (typeof AryamSeo !== "undefined") {
+      AryamSeo.apply({
+        title: shareTitle,
+        description: shareDesc,
+        image: shareImage,
+        imageAlt: p.title || "Gold jewelry at Aryam's Jewelry",
+        url: AryamSeo.SITE + "/shop/product/?slug=" + encodeURIComponent(p.slug),
+        type: "product"
+      });
+    } else {
+      document.title = shareTitle;
+      var metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) metaDesc.setAttribute("content", shareDesc);
+    }
 
     var price = AryamPricing.displayPrice(p);
     var breakdown = AryamPricing.priceBreakdown(p);
