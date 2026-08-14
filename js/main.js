@@ -17,6 +17,7 @@
      ============================================================ */
   var header = $("#siteHeader");
   var onScroll = function () {
+    if (document.body.classList.contains("nav-open")) return;
     header.classList.toggle("scrolled", window.scrollY > 30);
   };
   window.addEventListener("scroll", onScroll, { passive: true });
@@ -26,13 +27,24 @@
   var closeNav = function () {
     document.body.classList.remove("nav-open");
     navToggle.setAttribute("aria-expanded", "false");
+    navToggle.setAttribute("aria-label", "Open menu");
+    header.classList.toggle("scrolled", window.scrollY > 30);
+  };
+  var openNav = function () {
+    document.body.classList.add("nav-open");
+    navToggle.setAttribute("aria-expanded", "true");
+    navToggle.setAttribute("aria-label", "Close menu");
+    header.classList.remove("scrolled");
   };
   navToggle.addEventListener("click", function () {
-    var open = document.body.classList.toggle("nav-open");
-    navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+    if (document.body.classList.contains("nav-open")) closeNav();
+    else openNav();
   });
   $$(".primary-nav a").forEach(function (a) {
     a.addEventListener("click", closeNav);
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeNav();
   });
 
   $("#year").textContent = String(new Date().getFullYear());

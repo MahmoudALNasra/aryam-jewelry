@@ -58,7 +58,18 @@ python scripts\prepare_products.py
 Then open Admin → **Reset to seed data** (or hard-refresh) so the browser picks up the new catalog.
 Instagram on the photos: [@aryamjewelry0](https://www.instagram.com/aryamjewelry0/).
 
-## Photo uploads (admin)
+## Live Google reviews
+
+1. Run [`supabase/reviews.sql`](supabase/reviews.sql) in the SQL editor.
+2. Enable **Places API** in Google Cloud and create an API key.
+3. Set Edge Function secrets:
+   - `GOOGLE_MAPS_API_KEY`
+   - `GOOGLE_PLACE_ID=ChIJvZYXdLTDQIYRthuVnPvmRzI`
+4. Deploy: `supabase functions deploy refresh-google-reviews`
+5. Call the function once (or schedule daily). The homepage caches reviews for **24 hours** (localStorage + Supabase), including reviewer profile photos from Google.
+
+Until the API key is set, the page shows the seed reviews with avatar placeholders.
+
 
 1. In Supabase → **Storage** → create a public bucket named `product-images`.
 2. Run [`supabase/storage.sql`](supabase/storage.sql) in the SQL editor.

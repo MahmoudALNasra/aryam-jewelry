@@ -171,20 +171,29 @@ h2 em, h1 em {
 .site-header {
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 200;
   transition: background-color 0.35s ease, border-color 0.35s ease, backdrop-filter 0.35s ease;
   border-bottom: 1px solid transparent;
 }
 .site-header.scrolled {
-  background: rgba(11, 10, 8, 0.82);
+  background: rgba(11, 10, 8, 0.92);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+  border-bottom-color: var(--line);
+}
+body.nav-open .site-header,
+body.nav-open .site-header.scrolled {
+  background: #0b0a08;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border-bottom-color: var(--line);
 }
 .nav-wrap {
   display: flex; align-items: center; justify-content: space-between;
   gap: 2rem;
   padding-block: 0.9rem;
+  position: relative;
+  z-index: 220;
 }
 .brand { display: flex; flex-direction: column; line-height: 1.15; }
 .brand-en {
@@ -199,7 +208,7 @@ h2 em, h1 em {
   color: var(--cream); font-size: 0.92rem; font-weight: 500; letter-spacing: 0.04em;
   position: relative;
 }
-.primary-nav a:not(.nav-call)::after {
+.primary-nav a:not(.nav-call):not(.nav-shop)::after {
   content: ""; position: absolute; left: 0; bottom: -6px;
   width: 100%; height: 1px;
   background: var(--gold);
@@ -207,7 +216,25 @@ h2 em, h1 em {
   transition: transform 0.3s ease;
 }
 .primary-nav a:not(.nav-call):hover { color: var(--gold-2); }
-.primary-nav a:not(.nav-call):hover::after { transform: scaleX(1); transform-origin: left; }
+.primary-nav a:not(.nav-call):not(.nav-shop):hover::after { transform: scaleX(1); transform-origin: left; }
+
+.nav-shop {
+  display: inline-flex !important;
+  align-items: center;
+  padding: 0.5rem 1.15rem !important;
+  border-radius: 999px;
+  background: linear-gradient(120deg, var(--gold-3), var(--gold) 55%, var(--gold-2));
+  color: var(--ink) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em;
+  box-shadow: 0 4px 18px rgba(212, 175, 55, 0.28);
+}
+.nav-shop:hover {
+  color: var(--ink) !important;
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
 .nav-call {
   display: inline-flex; align-items: center; gap: 0.45rem;
   padding: 0.55rem 1.15rem;
@@ -221,16 +248,47 @@ h2 em, h1 em {
 
 .nav-toggle {
   display: none;
-  flex-direction: column; gap: 6px;
-  background: none; border: 0; padding: 0.5rem;
+  position: relative;
+  z-index: 230;
+  width: 48px;
+  height: 48px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(11, 10, 8, 0.9);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0;
   cursor: pointer;
 }
 .nav-toggle span {
-  width: 26px; height: 2px; background: var(--gold-2);
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--gold-2);
+  border-radius: 2px;
+  transition: transform 0.28s ease, opacity 0.28s ease;
+  transform-origin: center;
 }
-body.nav-open .nav-toggle span:first-child { transform: translateY(4px) rotate(45deg); }
-body.nav-open .nav-toggle span:last-child { transform: translateY(-4px) rotate(-45deg); }
+body.nav-open .nav-toggle {
+  background: #0b0a08;
+  border-color: var(--gold);
+}
+body.nav-open .nav-toggle span:nth-child(1) {
+  transform: translateY(8px) rotate(45deg);
+}
+body.nav-open .nav-toggle span:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+body.nav-open .nav-toggle span:nth-child(3) {
+  transform: translateY(-8px) rotate(-45deg);
+}
+body.nav-open {
+  overflow: hidden;
+  touch-action: none;
+}
 
 /* ---------- Hero ---------- */
 .hero {
@@ -603,18 +661,32 @@ td.price.flash { animation: price-flash 0.9s ease; }
   color: rgba(212, 175, 55, 0.12);
   pointer-events: none;
 }
-.review-card .stars { font-size: 0.95rem; margin-bottom: 0.9rem; }
+.review-card .stars { font-size: 0.95rem; margin-bottom: 0.9rem; color: var(--gold); letter-spacing: 0.12em; }
 .review-card blockquote {
   margin: 0 0 1.3rem;
   font-family: var(--font-display); font-style: italic;
   font-size: 1.12rem; line-height: 1.5;
   color: var(--cream);
 }
-.review-card figcaption { display: flex; flex-direction: column; gap: 0.1rem; }
+.review-card figcaption {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.review-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  background: #1a1612;
+  flex-shrink: 0;
+}
+.review-card figcaption .who { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
 .review-card figcaption strong { font-size: 0.95rem; color: var(--gold-2); }
 .review-card figcaption span { font-size: 0.8rem; color: var(--muted); }
 
-.reviews-cta { margin-top: 2.6rem; text-align: center; }
+.reviews-cta { margin-top: 2.6rem; text-align: center; display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; }
 
 /* ---------- Visit ---------- */
 .visit { background: var(--bg-2); border-block: 1px solid var(--line-soft); }
@@ -784,17 +856,33 @@ td.price.flash { animation: price-flash 0.9s ease; }
 @media (max-width: 1023px) {
   .nav-toggle { display: flex; }
   .primary-nav {
-    position: fixed; inset: 0;
-    z-index: -1;
-    flex-direction: column; justify-content: center;
-    gap: 2.2rem;
-    background: rgba(11, 10, 8, 0.97);
-    backdrop-filter: blur(18px);
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.35s ease;
+    position: fixed;
+    inset: 0;
+    z-index: 210;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 1.6rem;
+    padding: 5.5rem 1.5rem 2rem;
+    background: #0b0a08;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
   }
-  body.nav-open .primary-nav { opacity: 1; pointer-events: auto; z-index: 99; }
-  .primary-nav a { font-size: 1.35rem; }
+  body.nav-open .primary-nav {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  .primary-nav a {
+    font-size: 1.35rem;
+    min-height: 48px;
+  }
+  .primary-nav .nav-shop {
+    font-size: 1.15rem !important;
+    padding: 0.85rem 1.6rem !important;
+  }
   .nav-call { font-size: 1.1rem; }
 
   .gold-grid, .visit-grid { grid-template-columns: 1fr; }

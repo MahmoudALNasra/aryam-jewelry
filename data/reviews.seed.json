@@ -1,0 +1,28 @@
+{
+  "rating": 4.9,
+  "user_ratings_total": 172,
+  "updated_at": "2026-08-14T00:00:00.000Z",
+  "reviews": [
+    {
+      "author_name": "Yasmin Ghalayini",
+      "rating": 5,
+      "text": "Great customer service they even offer me coffee and chocolates.",
+      "profile_photo_url": "https://ui-avatars.com/api/?name=Yasmin+Ghalayini&background=1a1612&color=d4af37&size=128&bold=true",
+      "relative_time_description": "Google review"
+    },
+    {
+      "author_name": "Adam Balghit",
+      "rating": 5,
+      "text": "They have a great selection and very kind staff.",
+      "profile_photo_url": "https://ui-avatars.com/api/?name=Adam+Balghit&background=1a1612&color=d4af37&size=128&bold=true",
+      "relative_time_description": "Google review"
+    },
+    {
+      "author_name": "Zee",
+      "rating": 5,
+      "text": "Great prices and very very professional service.",
+      "profile_photo_url": "https://ui-avatars.com/api/?name=Zee&background=1a1612&color=d4af37&size=128&bold=true",
+      "relative_time_description": "Google review"
+    }
+  ]
+}
