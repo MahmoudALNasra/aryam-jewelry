@@ -269,7 +269,8 @@ body.admin-body {
   width: 100%;
   margin: 1.5rem 0 0;
   padding: clamp(1rem, 3vw, 1.75rem);
-  overflow: hidden;
+  overflow-x: clip;
+  overflow-y: visible;
 }
 
 .editor-grid {
@@ -294,6 +295,7 @@ body.admin-body {
   color: var(--muted);
   min-width: 0;
   max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .editor-grid input,
@@ -745,7 +747,7 @@ label.is-invalid .field-error,
 
   #productEditor.login-card {
     margin-top: 1rem;
-    padding: 1rem;
+    padding: 0.9rem;
     border-radius: 14px;
   }
 
@@ -765,11 +767,13 @@ label.is-invalid .field-error,
     position: sticky;
     bottom: 0;
     z-index: 15;
-    margin: 1.25rem -1rem -1rem;
-    padding: 0.85rem 1rem calc(0.85rem + env(safe-area-inset-bottom));
+    margin: 1.25rem -0.9rem -0.9rem;
+    padding: 0.85rem 0.9rem calc(0.85rem + env(safe-area-inset-bottom));
     background: rgba(11, 10, 8, 0.96);
     backdrop-filter: blur(12px);
     border-top: 1px solid var(--line);
+    width: calc(100% + 1.8rem);
+    max-width: none;
   }
 
   .editor-tools .btn,
@@ -777,8 +781,20 @@ label.is-invalid .field-error,
     flex: 1 1 100%;
   }
 
+  .price-mode-box {
+    padding: 0.75rem;
+  }
+
+  .price-mode-option {
+    min-height: 52px;
+  }
+
   .editor-section-label {
     margin-top: 0.5rem;
+  }
+
+  .spot-bar {
+    padding: 0.75rem 0.85rem;
   }
 }
 
@@ -794,12 +810,22 @@ label.is-invalid .field-error,
     flex: 1 1 100%;
   }
   .photo-preview {
-    width: min(100%, 240px);
-    max-height: min(300px, 48vh);
+    width: min(100%, 220px);
+    max-height: min(280px, 42vh);
+  }
+  .photo-thumb {
+    width: 56px;
+    height: 70px;
   }
   .login-card {
-    width: calc(100% - 1.25rem);
+    width: calc(100% - 1rem);
     margin-inline: auto;
+  }
+  .admin-main h1 {
+    font-size: clamp(1.35rem, 7vw, 1.8rem);
+  }
+  .admin-toolbar .btn {
+    flex: 1 1 100%;
   }
 }
 

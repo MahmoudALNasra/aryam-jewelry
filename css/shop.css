@@ -7,6 +7,8 @@
 
 body.shop-body {
   padding-bottom: 0;
+  overflow-x: clip;
+  min-width: 0;
 }
 
 .shop-top {
@@ -22,11 +24,13 @@ body.shop-body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
   padding-block: 0.85rem;
   max-width: var(--shop-max);
   margin-inline: auto;
-  padding-inline: clamp(1.25rem, 4vw, 2rem);
+  padding-inline: max(1rem, env(safe-area-inset-left), clamp(1rem, 4vw, 2rem));
+  padding-inline-end: max(1rem, env(safe-area-inset-right), clamp(1rem, 4vw, 2rem));
+  min-width: 0;
 }
 
 .shop-nav {
@@ -128,6 +132,7 @@ body.shop-body {
 .product-card {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   overflow: hidden;
@@ -233,14 +238,22 @@ body.shop-body {
 .product-page {
   max-width: var(--shop-max);
   margin: 0 auto;
-  padding: clamp(2rem, 5vw, 3.5rem) clamp(1.25rem, 4vw, 2rem) 5rem;
+  padding: clamp(1.25rem, 5vw, 3.5rem) max(1rem, env(safe-area-inset-left), clamp(1rem, 4vw, 2rem)) calc(4rem + env(safe-area-inset-bottom));
+  padding-inline-end: max(1rem, env(safe-area-inset-right), clamp(1rem, 4vw, 2rem));
+  min-width: 0;
 }
 
 .pdp-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-  gap: clamp(2rem, 4vw, 3.5rem);
+  gap: clamp(1.5rem, 4vw, 3.5rem);
   align-items: start;
+  min-width: 0;
+}
+
+.pdp-gallery,
+.pdp-info {
+  min-width: 0;
 }
 
 .pdp-gallery {
@@ -380,17 +393,22 @@ body.shop-body {
   gap: 1rem;
 }
 
+.related-grid > * {
+  min-width: 0;
+}
+
 .related-card h3 {
   font-size: 1.05rem;
   margin: 0.35rem 0;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 1023px) {
   .related-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-@media (max-width: 560px) {
-  .related-grid { grid-template-columns: 1fr; }
+@media (max-width: 380px) {
+  .related-grid { gap: 0.75rem; }
 }
 
 .specs {
@@ -612,7 +630,23 @@ body.shop-body {
   .pdp-actions .btn { width: 100%; min-height: 48px; }
   .qty-input { justify-content: center; width: 100%; }
   .pdp-thumbs { gap: 0.4rem; }
-  .pdp-thumb { width: 56px; height: 70px; }
+  .pdp-thumb { width: 56px; height: 70px; min-width: 56px; }
+  .pdp-info h1 { font-size: clamp(1.55rem, 7vw, 2.1rem); }
+  .pdp-price { font-size: clamp(1.7rem, 7vw, 2.2rem); }
+  .specs { grid-template-columns: 1fr 1fr; padding: 1rem; gap: 0.7rem; }
+  .rich-body { font-size: 0.98rem; }
+  .lightbox img {
+    max-width: min(100%, 100vw);
+    max-height: min(85vh, 85dvh);
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
   .cart-page .btn, .checkout-page .btn { min-height: 48px; width: 100%; }
   .form-grid input, .form-grid textarea { font-size: 16px; min-height: 48px; }
+  .product-grid,
+  .product-page {
+    padding-inline: max(0.85rem, env(safe-area-inset-left));
+    padding-inline-end: max(0.85rem, env(safe-area-inset-right));
+  }
 }
