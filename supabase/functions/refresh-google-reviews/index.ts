@@ -1,12 +1,40 @@
-// Supabase Edge Function — refresh Google Place reviews (max ~5 from Places API)
-// Secrets: GOOGLE_MAPS_API_KEY, SUPABASE_SERVICE_ROLE_KEY (auto), GOOGLE_PLACE_ID (optional)
-// Deploy: supabase functions deploy refresh-google-reviews
-// Schedule: call this URL once/day (Vercel cron, Supabase cron, or GitHub Action)
+// Supabase Edge Function — refresh Google Place reviews
+// Places API returns up to 5 per call; we MERGE into existing cache (up to 24).
+// Secrets: GOOGLE_MAPS_API_KEY, GOOGLE_PLACE_ID (optional)
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+type Review = {
+  author_name: string;
+  author_url: string | null;
+  rating: number;
+  text: string;
+  profile_photo_url: string | null;
+  relative_time_description: string;
+  time: number | null;
+};
+
+function reviewKey(r: Review) {
+  return (
+    (r.author_name || "").toLowerCase().trim() +
+    "|" +
+    (r.text || "").toLowerCase().replace(/\s+/g, " ").trim().slice(0, 90)
+  );
+}
+
+function mergeReviews(existing: Review[], incoming: Review[], max = 24): Review[] {
+  const map = new Map<string, Review>();
+  for (const r of [...existing, ...incoming]) {
+    if (!r?.text) continue;
+    const k = reviewKey(r);
+    const prev = map.get(k);
+    if (!prev || (r.time || 0) >= (prev.time || 0)) map.set(k, r);
+  }
+  return [...map.values()].sort((a, b) => (b.time || 0) - (a.time || 0)).slice(0, max);
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -42,7 +70,7 @@ Deno.serve(async (req) => {
     }
 
     const result = placesJson.result;
-    const reviews = (result.reviews || []).map((r: {
+    const incoming: Review[] = (result.reviews || []).map((r: {
       author_name?: string;
       author_url?: string;
       rating?: number;
@@ -60,6 +88,26 @@ Deno.serve(async (req) => {
       time: typeof r.time === "number" ? r.time : null,
     }));
 
+    // Load existing cache to accumulate beyond Places' 5-review limit
+    let existing: Review[] = [];
+    try {
+      const cacheRes = await fetch(
+        `${supabaseUrl}/rest/v1/google_reviews_cache?place_id=eq.${encodeURIComponent(placeId)}&select=reviews&limit=1`,
+        {
+          headers: {
+            apikey: serviceKey,
+            Authorization: `Bearer ${serviceKey}`,
+          },
+        },
+      );
+      const rows = await cacheRes.json();
+      if (Array.isArray(rows) && rows[0]?.reviews) existing = rows[0].reviews;
+    } catch {
+      existing = [];
+    }
+
+    const reviews = mergeReviews(existing, incoming, 24);
+
     const payload = {
       place_id: placeId,
       rating: result.rating ?? null,
@@ -68,7 +116,6 @@ Deno.serve(async (req) => {
       updated_at: new Date().toISOString(),
     };
 
-    // Replace cache row(s)
     await fetch(`${supabaseUrl}/rest/v1/google_reviews_cache?place_id=eq.${encodeURIComponent(placeId)}`, {
       method: "DELETE",
       headers: {

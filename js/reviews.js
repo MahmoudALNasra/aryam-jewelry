@@ -2,7 +2,7 @@
 (function () {
   "use strict";
 
-  var CACHE_KEY = "aryamGoogleReviewsV3";
+  var CACHE_KEY = "aryamGoogleReviewsV4";
   var DAY_MS = 24 * 60 * 60 * 1000;
   var PLACE_ID = "ChIJvZYXdLTDQIYRthuVnPvmRzI";
   var MAPS_REVIEWS_URL =
@@ -10,7 +10,8 @@
     encodeURIComponent(PLACE_ID);
   var SHORT_MAPS = "https://maps.app.goo.gl/hD6xfHHKVSbvvXcBA";
   var CLAMP_CHARS = 160;
-  var ROTATE_MS = 5500;
+  var ROTATE_MS = 3200;
+  var MAX_SHOW = 18;
 
   var grid = document.getElementById("reviewsGrid");
   if (!grid) return;
@@ -113,22 +114,44 @@
     }
   }
 
+  function reviewKey(r) {
+    return String(r.author_name || "").toLowerCase().trim() + "|" +
+      String(r.text || "").toLowerCase().replace(/\s+/g, " ").trim().slice(0, 90);
+  }
+
+  function mergeReviews() {
+    var map = {};
+    var lists = Array.prototype.slice.call(arguments);
+    for (var i = 0; i < lists.length; i++) {
+      var list = lists[i] || [];
+      for (var j = 0; j < list.length; j++) {
+        var r = list[j];
+        if (!r || !r.text) continue;
+        var k = reviewKey(r);
+        if (!map[k] || reviewTs(r) > reviewTs(map[k])) map[k] = r;
+      }
+    }
+    return sortNewestFirst(Object.keys(map).map(function (k) { return map[k]; }));
+  }
+
   function cardHtml(r) {
     var full = String(r.text || "").trim();
     var long = full.length > CLAMP_CHARS;
     var shown = long ? full.slice(0, CLAMP_CHARS).replace(/\s+\S*$/, "") + "…" : full;
     var href = esc(reviewLink(r));
+    var when = esc(formatRelativeTime(r));
 
     return (
       '<a class="review-card" href="' + href + '" target="_blank" rel="noopener" ' +
         'aria-label="Read ' + esc(r.author_name || "Google") + '\'s review on Google">' +
+        '<span class="review-when-top">' + when + "</span>" +
         '<div class="stars" aria-label="' + (r.rating || 5) + ' out of 5 stars">' + stars(r.rating) + "</div>" +
         '<p class="review-quote">&ldquo;' + esc(shown) + "&rdquo;</p>" +
         (long ? '<span class="review-more">Read more on Google</span>' : '<span class="review-more" hidden></span>') +
         "<div class=\"review-by\">" +
           '<img class="review-avatar" src="' + esc(avatarUrl(r)) + '" alt="" width="44" height="44" loading="lazy" referrerpolicy="no-referrer" />' +
           '<div class="who"><strong>' + esc(r.author_name || "Google reviewer") + "</strong>" +
-          '<span class="review-when">' + esc(formatRelativeTime(r)) + "</span></div>" +
+          '<span class="review-source">Google review</span></div>' +
         "</div>" +
       "</a>"
     );
@@ -136,7 +159,7 @@
 
   function paint(payload) {
     lastPayload = payload;
-    var reviews = sortNewestFirst((payload && payload.reviews) || []);
+    var reviews = sortNewestFirst((payload && payload.reviews) || []).slice(0, MAX_SHOW);
     var rating = payload && payload.rating != null ? payload.rating : 4.9;
     var total = payload && payload.user_ratings_total != null ? payload.user_ratings_total : 172;
     var updated = payload && payload.updated_at ? new Date(payload.updated_at) : null;
@@ -225,7 +248,7 @@
     s.id = "reviewCarouselCss";
     s.textContent =
       ".review-viewport{overflow:hidden;width:100%}" +
-      ".review-track{display:flex;width:100%;transition:transform .7s cubic-bezier(.22,1,.36,1)}" +
+      ".review-track{display:flex;width:100%;transition:transform .45s cubic-bezier(.22,1,.36,1)}" +
       ".review-page{display:flex;gap:clamp(1.2rem,2.5vw,2rem);flex:0 0 100%;min-width:100%;box-sizing:border-box}" +
       ".review-page .review-card{flex:1 1 0;min-width:0}" +
       "@media (max-width:900px){.review-page{gap:0}}";
@@ -317,41 +340,42 @@
 
   function boot() {
     var local = readLocal();
-    if (local && isFresh(local)) {
-      render(local);
+
+    function withSeed(payload) {
+      return loadSeed().then(function (seed) {
+        var merged = {
+          rating: (payload && payload.rating != null) ? payload.rating : seed.rating,
+          user_ratings_total: (payload && payload.user_ratings_total != null)
+            ? payload.user_ratings_total : seed.user_ratings_total,
+          updated_at: (payload && payload.updated_at) || seed.updated_at || new Date().toISOString(),
+          reviews: mergeReviews((payload && payload.reviews) || [], seed.reviews || [])
+        };
+        writeLocal(merged);
+        paint(merged);
+        return merged;
+      });
+    }
+
+    if (local && isFresh(local) && (local.reviews || []).length >= 6) {
+      paint(local);
       return;
     }
-    if (local) render(local);
+    if (local) paint(local);
 
     loadFromSupabase().then(function (remote) {
       if (remote && isFresh(remote)) {
-        writeLocal(remote);
-        render(remote);
-        return;
+        return withSeed(remote);
       }
-      if (remote) {
-        writeLocal(remote);
-        render(remote);
-      }
+      if (remote) paint(remote);
 
       return refreshViaEdge().then(function (fresh) {
-        if (fresh && fresh.reviews) {
-          writeLocal(fresh);
-          render(fresh);
-          return;
-        }
-        if (!local && !remote) {
-          return loadSeed().then(function (seed) {
-            writeLocal(seed);
-            render(seed);
-          });
-        }
+        if (fresh && fresh.reviews) return withSeed(fresh);
+        if (remote) return withSeed(remote);
+        if (local) return withSeed(local);
+        return withSeed(null);
       });
     }).catch(function () {
-      loadSeed().then(function (seed) {
-        writeLocal(seed);
-        render(seed);
-      });
+      withSeed(local);
     });
   }
 

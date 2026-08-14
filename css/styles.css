@@ -671,6 +671,18 @@ td.price.flash { animation: price-flash 0.9s ease; }
   color: inherit;
   transition: border-color 0.25s ease, transform 0.25s ease;
 }
+.review-when-top {
+  position: absolute;
+  top: 1.05rem;
+  right: 1.15rem;
+  z-index: 2;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  white-space: nowrap;
+}
 a.review-card:hover {
   border-color: rgba(212, 175, 55, 0.45);
   transform: translateY(-2px);
@@ -683,7 +695,12 @@ a.review-card:hover {
   color: rgba(212, 175, 55, 0.12);
   pointer-events: none;
 }
-.review-card .stars { font-size: 0.95rem; margin-bottom: 0.9rem; color: var(--gold); letter-spacing: 0.12em; }
+.review-card .stars {
+  font-size: 0.95rem;
+  margin: 0 5.5rem 0.9rem 0;
+  color: var(--gold);
+  letter-spacing: 0.12em;
+}
 .review-card .review-quote {
   margin: 0;
   flex: 1;
