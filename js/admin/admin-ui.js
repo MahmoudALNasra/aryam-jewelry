@@ -77,6 +77,7 @@
     if (imageUrlsField) imageUrlsField.value = JSON.stringify(list);
     if (imageUrlField) imageUrlField.value = list[0] || "";
     renderPhotoGallery(list);
+    if (typeof saveDraftSoon === "function") saveDraftSoon();
   }
 
   function displayThumb(url) {
@@ -146,16 +147,30 @@
     AryamPricing.fetchSpot().then(function (spot) {
       spotOz = spot;
       if (!spot) {
-        spotBar.innerHTML = "Live gold spot unavailable — enter sell $/g manually.";
+        spotBar.innerHTML = "Live gold spot unavailable — enter sell $/g manually. <button type=\"button\" class=\"spot-refresh\" id=\"btnRefreshSpot\">Retry</button>";
+        wireSpotRefresh();
         return;
       }
+      var stamp = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
       spotBar.innerHTML =
         "Live spot <strong>" + AryamPricing.formatMoney(spot) + "/oz</strong>" +
         " · 24K ~<strong>" + AryamPricing.formatMoney(AryamPricing.marketPerGram(spot, 24)) + "/g</strong>" +
         " · 22K ~<strong>" + AryamPricing.formatMoney(AryamPricing.marketPerGram(spot, 22)) + "/g</strong>" +
         " · 21K ~<strong>" + AryamPricing.formatMoney(AryamPricing.marketPerGram(spot, 21)) + "/g</strong>" +
-        " · 18K ~<strong>" + AryamPricing.formatMoney(AryamPricing.marketPerGram(spot, 18)) + "/g</strong>";
+        " · 18K ~<strong>" + AryamPricing.formatMoney(AryamPricing.marketPerGram(spot, 18)) + "/g</strong>" +
+        " <span class=\"spot-stamp\">· updated " + stamp + "</span>" +
+        " <button type=\"button\" class=\"spot-refresh\" id=\"btnRefreshSpot\">Refresh</button>";
+      wireSpotRefresh();
       updatePreview();
+    });
+  }
+
+  function wireSpotRefresh() {
+    var btn = document.getElementById("btnRefreshSpot");
+    if (!btn) return;
+    btn.addEventListener("click", function () {
+      if (spotBar) spotBar.textContent = "Refreshing live gold spot…";
+      refreshSpot();
     });
   }
 
@@ -234,33 +249,52 @@
     var tb = document.getElementById("mainToolbar");
     if (tb) tb.hidden = true;
     editor.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    var draft = readDraft(product && product.id);
+    var useDraft = !!(draft && draft.fields && (!product || !product.id));
+    if (product && product.id && draft && draft.fields && draft.productId === String(product.id)) {
+      useDraft = confirm("A saved draft for this piece was found. Restore it?");
+    }
+
+    var src = useDraft ? draft.fields : null;
     var f = editor;
-    f.id.value = product ? product.id : "";
-    f.slug.value = product ? product.slug : "";
-    f.sku.value = product ? (product.sku || "") : "";
-    f.title.value = product ? product.title : "";
-    f.title_ar.value = product ? product.title_ar : "";
-    f.description.value = product ? product.description : "";
-    f.description_ar.value = product ? product.description_ar : "";
-    f.seo_title.value = product ? product.seo_title : "";
-    f.seo_description.value = product ? product.seo_description : "";
-    f.category.value = product ? product.category : "other";
-    f.karat.value = product ? product.karat : 21;
-    f.weight_grams.value = product ? product.weight_grams : "";
-    f.sell_price_per_gram.value = product ? product.sell_price_per_gram : "";
-    f.making_charge.value = product ? product.making_charge : 0;
-    f.fixed_price.value = product && product.fixed_price != null ? product.fixed_price : "";
-    f.stock_qty.value = product ? product.stock_qty : 1;
-    f.rich_content.value = product ? (product.rich_content || "") : "";
-    f.rich_content_ar.value = product ? (product.rich_content_ar || "") : "";
-    var mode = product && product.price_mode === "fixed" ? "fixed" : "formula";
+    f.id.value = product ? product.id : (src && src.id) || "";
+    f.slug.value = src ? (src.slug || "") : (product ? product.slug : "");
+    f.sku.value = src ? (src.sku || "") : (product ? (product.sku || "") : "");
+    f.title.value = src ? (src.title || "") : (product ? product.title : "");
+    f.title_ar.value = src ? (src.title_ar || "") : (product ? product.title_ar : "");
+    f.description.value = src ? (src.description || "") : (product ? product.description : "");
+    f.description_ar.value = src ? (src.description_ar || "") : (product ? product.description_ar : "");
+    f.seo_title.value = src ? (src.seo_title || "") : (product ? product.seo_title : "");
+    f.seo_description.value = src ? (src.seo_description || "") : (product ? product.seo_description : "");
+    f.category.value = src ? (src.category || "other") : (product ? product.category : "other");
+    f.karat.value = src ? (src.karat || 21) : (product ? product.karat : 21);
+    f.weight_grams.value = src ? (src.weight_grams || "") : (product ? product.weight_grams : "");
+    f.sell_price_per_gram.value = src ? (src.sell_price_per_gram || "") : (product ? product.sell_price_per_gram : "");
+    f.making_charge.value = src ? (src.making_charge || 0) : (product ? product.making_charge : 0);
+    f.fixed_price.value = src
+      ? (src.fixed_price != null ? src.fixed_price : "")
+      : (product && product.fixed_price != null ? product.fixed_price : "");
+    f.stock_qty.value = src ? (src.stock_qty != null ? src.stock_qty : 1) : (product ? product.stock_qty : 1);
+    f.rich_content.value = src ? (src.rich_content || "") : (product ? (product.rich_content || "") : "");
+    f.rich_content_ar.value = src ? (src.rich_content_ar || "") : (product ? (product.rich_content_ar || "") : "");
+    var mode = src
+      ? (src.price_mode === "fixed" ? "fixed" : "formula")
+      : (product && product.price_mode === "fixed" ? "fixed" : "formula");
     Array.prototype.forEach.call(editor.querySelectorAll('input[name="price_mode"]'), function (r) {
       r.checked = r.value === mode;
     });
     syncPriceModeUI();
-    imageUrlField.value = product ? (product.image_url || "") : "";
-    setImageUrls(product ? (product.image_urls && product.image_urls.length ? product.image_urls : (product.image_url ? [product.image_url] : [])) : []);
-    f.published.checked = product ? !!product.published : true;
+    imageUrlField.value = src ? (src.image_url || "") : (product ? (product.image_url || "") : "");
+    setImageUrls(
+      src
+        ? (src.image_urls || [])
+        : (product ? (product.image_urls && product.image_urls.length ? product.image_urls : (product.image_url ? [product.image_url] : [])) : [])
+    );
+    f.published.checked = src
+      ? src.published !== false
+      : (product ? !!product.published : true);
+
     document.getElementById("editorTitle").textContent = product ? "Edit piece" : "New piece";
     if (uploadStatus) uploadStatus.textContent = "";
     if (uploadProgress) uploadProgress.hidden = true;
@@ -275,9 +309,227 @@
       var lab = el.closest("label");
       if (lab) lab.classList.remove("is-invalid");
     });
-    skuManual = !!(product && product.sku);
-    if (!skuManual) refreshSku(true);
+
+    if (useDraft && draft && draft.flags) {
+      applyAutoFlags(draft.flags);
+      // If SEO was never filled, keep auto mode on.
+      if (!(draft.fields && String(draft.fields.seo_title || "").trim())) autoFlags.seoTitleManual = false;
+      if (!(draft.fields && String(draft.fields.seo_description || "").trim())) autoFlags.seoDescManual = false;
+      refreshSku(false);
+      refreshSlug(false);
+      refreshSeo(false);
+      if (!fieldEl("seo_title") || !fieldEl("seo_title").value.trim()) refreshSeo(true);
+      scheduleArabicTranslate();
+      saveDraftSoon();
+      showDraftStatus(draft);
+    } else if (product) {
+      applyAutoFlags({
+        skuManual: !!product.sku,
+        slugManual: !!product.slug,
+        seoTitleManual: !!product.seo_title,
+        seoDescManual: !!product.seo_description,
+        titleArManual: !!product.title_ar,
+        descArManual: !!product.description_ar,
+        richArManual: !!product.rich_content_ar
+      });
+      if (!editor.sku.value) { autoFlags.skuManual = false; refreshSku(true); }
+      if (!editor.slug.value) { autoFlags.slugManual = false; refreshSlug(true); }
+      var seoTitleInput = fieldEl("seo_title");
+      var seoDescInput = fieldEl("seo_description");
+      if (!seoTitleInput || !seoTitleInput.value) autoFlags.seoTitleManual = false;
+      if (!seoDescInput || !seoDescInput.value) autoFlags.seoDescManual = false;
+      refreshSeo(true);
+      if (!editor.title_ar.value || !editor.description_ar.value || !editor.rich_content_ar.value) {
+        if (!editor.title_ar.value) autoFlags.titleArManual = false;
+        if (!editor.description_ar.value) autoFlags.descArManual = false;
+        if (!editor.rich_content_ar.value) autoFlags.richArManual = false;
+        scheduleArabicTranslate();
+      }
+      saveDraftSoon();
+      showDraftStatus(null);
+    } else {
+      applyAutoFlags({
+        skuManual: false,
+        slugManual: false,
+        seoTitleManual: false,
+        seoDescManual: false,
+        titleArManual: false,
+        descArManual: false,
+        richArManual: false
+      });
+      refreshDerivedFields(true);
+      showDraftStatus(null);
+    }
+
     updatePreview();
+  }
+
+  var DRAFT_PREFIX = "aryamProductEditorDraftV1:";
+  var autoFlags = {
+    skuManual: false,
+    slugManual: false,
+    seoTitleManual: false,
+    seoDescManual: false,
+    titleArManual: false,
+    descArManual: false,
+    richArManual: false
+  };
+  var draftTimer = null;
+  var translateTimer = null;
+  var translateSeq = 0;
+
+  function applyAutoFlags(flags) {
+    Object.keys(autoFlags).forEach(function (k) {
+      autoFlags[k] = !!(flags && flags[k]);
+    });
+  }
+
+  function draftStorageKey(id) {
+    return DRAFT_PREFIX + (id || "new");
+  }
+
+  function readDraft(id) {
+    try {
+      var raw = localStorage.getItem(draftStorageKey(id));
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function clearDraft(id) {
+    try {
+      localStorage.removeItem(draftStorageKey(id || "new"));
+      if (id) localStorage.removeItem(draftStorageKey("new"));
+    } catch (e) { /* ignore */ }
+    showDraftStatus(null);
+  }
+
+  function collectDraftFields() {
+    return {
+      id: editor.id.value || "",
+      slug: editor.slug.value,
+      sku: editor.sku.value,
+      title: editor.title.value,
+      title_ar: editor.title_ar.value,
+      description: editor.description.value,
+      description_ar: editor.description_ar.value,
+      rich_content: editor.rich_content.value,
+      rich_content_ar: editor.rich_content_ar.value,
+      seo_title: editor.seo_title.value,
+      seo_description: editor.seo_description.value,
+      category: editor.category.value,
+      karat: editor.karat.value,
+      weight_grams: editor.weight_grams.value,
+      sell_price_per_gram: editor.sell_price_per_gram.value,
+      making_charge: editor.making_charge.value,
+      fixed_price: editor.fixed_price.value,
+      stock_qty: editor.stock_qty.value,
+      price_mode: currentPriceMode(),
+      published: !!(editor.published && editor.published.checked),
+      image_url: imageUrlField.value,
+      image_urls: getImageUrls()
+    };
+  }
+
+  function saveDraftSoon() {
+    if (!editor || editor.hidden) return;
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(function () {
+      try {
+        var payload = {
+          savedAt: new Date().toISOString(),
+          productId: editor.id.value || "new",
+          fields: collectDraftFields(),
+          flags: Object.assign({}, autoFlags)
+        };
+        localStorage.setItem(draftStorageKey(editor.id.value || "new"), JSON.stringify(payload));
+        showDraftStatus(payload);
+      } catch (e) { /* ignore quota */ }
+    }, 400);
+  }
+
+  function showDraftStatus(draft) {
+    var el = document.getElementById("draftStatus");
+    if (!el) return;
+    if (!draft || !draft.savedAt) {
+      el.hidden = true;
+      el.textContent = "";
+      return;
+    }
+    var when = new Date(draft.savedAt);
+    var label = isNaN(when.getTime()) ? "recently" : when.toLocaleString();
+    el.hidden = false;
+    el.innerHTML = "Draft saved locally · " + esc(label) +
+      ' <button type="button" id="btnClearDraft">Clear draft</button>';
+    var btn = document.getElementById("btnClearDraft");
+    if (btn) {
+      btn.addEventListener("click", function () {
+        clearDraft(editor.id.value || "new");
+      });
+    }
+  }
+
+  function categoryLabel(cat) {
+    var map = {
+      bridal: "bridal",
+      bangles: "bangles",
+      necklaces: "necklace",
+      rings: "ring",
+      coins: "gold coin",
+      earrings: "earrings",
+      other: "gold jewelry"
+    };
+    return map[cat] || "gold jewelry";
+  }
+
+  function buildAutoSlug() {
+    var title = (editor.title.value || "").trim().toLowerCase();
+    var slug = title.replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    var grams = String(editor.weight_grams.value || "").trim();
+    var karat = String(editor.karat.value || "").trim();
+    if (karat) slug = (slug ? slug + "-" : "") + karat + "k";
+    if (grams && isFinite(Number(grams))) {
+      slug = (slug ? slug + "-" : "") + Number(grams).toFixed(3).replace(/\.?0+$/, "") + "g";
+    }
+    return slug.slice(0, 80);
+  }
+
+  function buildAutoSeoTitle() {
+    var title = (editor.title.value || "").trim();
+    if (!title) return "";
+    var karat = editor.karat.value || "21";
+    var grams = String(editor.weight_grams.value || "").trim();
+    var gPart = grams && isFinite(Number(grams))
+      ? Number(grams).toFixed(3).replace(/\.?0+$/, "") + "g "
+      : "";
+    return (title + " | " + karat + "K " + gPart + "Gold | Aryam's Jewelry").replace(/\s+/g, " ").trim();
+  }
+
+  function buildAutoSeoDescription() {
+    var title = (editor.title.value || "").trim();
+    if (!title) return "";
+    var karat = editor.karat.value || "21";
+    var grams = String(editor.weight_grams.value || "").trim();
+    var cat = categoryLabel(editor.category.value);
+    var desc = (editor.description.value || "").trim();
+    var mock = {
+      price_mode: currentPriceMode(),
+      weight_grams: Number(editor.weight_grams.value) || 0,
+      sell_price_per_gram: Number(editor.sell_price_per_gram.value) || 0,
+      making_charge: Number(editor.making_charge.value) || 0,
+      fixed_price: editor.fixed_price.value === "" ? null : Number(editor.fixed_price.value)
+    };
+    var price = AryamPricing.displayPrice(mock);
+    var bits = [
+      title + " in " + karat + "K gold",
+      grams && isFinite(Number(grams)) ? Number(grams).toFixed(3).replace(/\.?0+$/, "") + " grams" : "",
+      cat,
+      price ? "from Aryam's Jewelry Houston — " + AryamPricing.formatMoney(price) : "from Aryam's Jewelry Houston"
+    ].filter(Boolean);
+    var base = bits.join(" · ") + ".";
+    if (desc) base += " " + desc;
+    return base.slice(0, 300);
   }
 
   function buildAutoSku() {
@@ -299,7 +551,100 @@
     return parts.join("-").toUpperCase();
   }
 
-  var skuManual = false;
+  function refreshSku(force) {
+    if (!editor || !editor.sku) return;
+    if (!force && autoFlags.skuManual) return;
+    var next = buildAutoSku();
+    editor.sku.value = next === "ARY-21K" ? "" : next;
+  }
+
+  function refreshSlug(force) {
+    if (!editor || !editor.slug) return;
+    if (!force && autoFlags.slugManual) return;
+    editor.slug.value = buildAutoSlug();
+  }
+
+  function fieldEl(name) {
+    if (!editor) return null;
+    return editor.elements[name] || editor.querySelector('[name="' + name + '"]');
+  }
+
+  function refreshSeo(force) {
+    if (!editor) return;
+    var titleEl = fieldEl("seo_title");
+    var descEl = fieldEl("seo_description");
+    if (titleEl && (force || !autoFlags.seoTitleManual)) {
+      titleEl.value = buildAutoSeoTitle();
+    }
+    if (descEl && (force || !autoFlags.seoDescManual)) {
+      descEl.value = buildAutoSeoDescription();
+    }
+  }
+
+  function translateEnToAr(text) {
+    text = String(text || "").trim();
+    if (!text) return Promise.resolve("");
+    if (text.length > 450) text = text.slice(0, 450);
+    var url = "https://api.mymemory.translated.net/get?q=" + encodeURIComponent(text) + "&langpair=en|ar";
+    return fetch(url)
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var t = data && data.responseData && data.responseData.translatedText;
+        if (!t || /INVALID SOURCE|QUERY LENGTH|MYMEMORY WARNING/i.test(t)) return "";
+        return String(t).trim();
+      })
+      .catch(function () { return ""; });
+  }
+
+  function scheduleArabicTranslate() {
+    clearTimeout(translateTimer);
+    translateTimer = setTimeout(runArabicTranslate, 750);
+  }
+
+  function runArabicTranslate() {
+    if (!editor || editor.hidden) return;
+    var seq = ++translateSeq;
+    var jobs = [];
+
+    if (!autoFlags.titleArManual && editor.title.value.trim()) {
+      jobs.push(
+        translateEnToAr(editor.title.value).then(function (ar) {
+          if (seq !== translateSeq || autoFlags.titleArManual) return;
+          if (ar) editor.title_ar.value = ar;
+        })
+      );
+    }
+    if (!autoFlags.descArManual && editor.description.value.trim()) {
+      jobs.push(
+        translateEnToAr(editor.description.value).then(function (ar) {
+          if (seq !== translateSeq || autoFlags.descArManual) return;
+          if (ar) editor.description_ar.value = ar;
+        })
+      );
+    }
+    if (!autoFlags.richArManual && editor.rich_content.value.trim()) {
+      jobs.push(
+        translateEnToAr(editor.rich_content.value).then(function (ar) {
+          if (seq !== translateSeq || autoFlags.richArManual) return;
+          if (ar) editor.rich_content_ar.value = ar;
+        })
+      );
+    }
+
+    if (!jobs.length) return;
+    Promise.all(jobs).then(function () {
+      saveDraftSoon();
+    });
+  }
+
+  function refreshDerivedFields(force) {
+    refreshSku(force);
+    refreshSlug(force);
+    refreshSeo(force);
+    if (force) runArabicTranslate();
+    else scheduleArabicTranslate();
+    saveDraftSoon();
+  }
 
   function currentPriceMode() {
     var checked = editor.querySelector('input[name="price_mode"]:checked');
@@ -322,13 +667,6 @@
       if (mode === "fixed") editor.fixed_price.setAttribute("data-validate", "fixed");
       else editor.fixed_price.removeAttribute("data-validate");
     }
-  }
-
-  function refreshSku(force) {
-    if (!editor || !editor.sku) return;
-    if (!force && skuManual) return;
-    var next = buildAutoSku();
-    editor.sku.value = next === "ARY-21K" ? "" : next;
   }
 
   function updatePreview() {
@@ -388,31 +726,81 @@
       r.addEventListener("change", function () {
         syncPriceModeUI();
         updatePreview();
+        refreshSeo(false);
+        saveDraftSoon();
         showFormError("");
       });
     });
 
-    ["title", "weight_grams", "karat"].forEach(function (name) {
-      editor[name].addEventListener("input", function () { refreshSku(false); });
-      editor[name].addEventListener("change", function () { refreshSku(false); });
+    ["title", "weight_grams", "karat", "category"].forEach(function (name) {
+      if (!editor[name]) return;
+      editor[name].addEventListener("input", function () { refreshDerivedFields(false); });
+      editor[name].addEventListener("change", function () { refreshDerivedFields(false); });
     });
 
-    editor.sku.addEventListener("input", function () {
-      skuManual = editor.sku.value.trim().length > 0;
-      if (!skuManual) refreshSku(true);
+    ["description", "sell_price_per_gram", "making_charge", "fixed_price", "stock_qty"].forEach(function (name) {
+      if (!editor[name]) return;
+      editor[name].addEventListener("input", function () {
+        refreshSeo(false);
+        if (name === "description") scheduleArabicTranslate();
+        saveDraftSoon();
+      });
+      editor[name].addEventListener("change", function () {
+        refreshSeo(false);
+        saveDraftSoon();
+      });
     });
-    editor.sku.addEventListener("blur", function () {
-      if (!editor.sku.value.trim()) {
-        skuManual = false;
-        refreshSku(true);
-      }
+
+    if (editor.rich_content) {
+      editor.rich_content.addEventListener("input", function () {
+        scheduleArabicTranslate();
+        saveDraftSoon();
+      });
+    }
+
+    function wireManual(field, flag, refreshFn) {
+      var el = fieldEl(field);
+      if (!el) return;
+      el.addEventListener("input", function (e) {
+        // Only real user edits lock auto-fill (ignores autofill / scripted updates).
+        if (!e.isTrusted) return;
+        autoFlags[flag] = el.value.trim().length > 0;
+        if (!autoFlags[flag] && refreshFn) refreshFn(true);
+        saveDraftSoon();
+      });
+      el.addEventListener("blur", function () {
+        if (!el.value.trim()) {
+          autoFlags[flag] = false;
+          if (refreshFn) refreshFn(true);
+        }
+        saveDraftSoon();
+      });
+    }
+
+    wireManual("sku", "skuManual", refreshSku);
+    wireManual("slug", "slugManual", refreshSlug);
+    wireManual("seo_title", "seoTitleManual", function () {
+      var el = fieldEl("seo_title");
+      if (el) el.value = buildAutoSeoTitle();
     });
+    wireManual("seo_description", "seoDescManual", function () {
+      var el = fieldEl("seo_description");
+      if (el) el.value = buildAutoSeoDescription();
+    });
+    wireManual("title_ar", "titleArManual", function () { scheduleArabicTranslate(); });
+    wireManual("description_ar", "descArManual", function () { scheduleArabicTranslate(); });
+    wireManual("rich_content_ar", "richArManual", function () { scheduleArabicTranslate(); });
+
+    if (editor.published) {
+      editor.published.addEventListener("change", saveDraftSoon);
+    }
 
     document.getElementById("btnNew").addEventListener("click", function () {
       openEditor(null);
     });
 
     document.getElementById("btnCancel").addEventListener("click", function () {
+      saveDraftSoon();
       editor.hidden = true;
       var tb = document.getElementById("mainToolbar");
       if (tb) tb.hidden = false;
@@ -425,6 +813,8 @@
       if (m != null) {
         editor.sell_price_per_gram.value = (Math.round(m * 100) / 100).toFixed(2);
         updatePreview();
+        refreshSeo(false);
+        saveDraftSoon();
       }
     });
 
@@ -437,6 +827,8 @@
       if (m != null) {
         editor.sell_price_per_gram.value = (Math.round(m * (1 + pct / 100) * 100) / 100).toFixed(2);
         updatePreview();
+        refreshSeo(false);
+        saveDraftSoon();
       }
     });
 
@@ -644,12 +1036,16 @@
       }
       var urls = getImageUrls();
       var mode = currentPriceMode();
+      if (!autoFlags.slugManual || !editor.slug.value.trim()) refreshSlug(true);
+      if (!autoFlags.seoTitleManual || !editor.seo_title.value.trim()) refreshSeo(true);
+      if (!autoFlags.skuManual && !editor.sku.value.trim()) refreshSku(true);
       var btn = document.getElementById("btnSave");
       btn.disabled = true;
       btn.textContent = "Saving…";
+      var draftId = editor.id.value || "new";
       var product = {
         id: editor.id.value || undefined,
-        slug: editor.slug.value.trim(),
+        slug: editor.slug.value.trim() || buildAutoSlug(),
         sku: editor.sku.value.trim() || null,
         title: editor.title.value.trim(),
         title_ar: editor.title_ar.value.trim(),
@@ -657,8 +1053,8 @@
         description_ar: editor.description_ar.value.trim(),
         rich_content: editor.rich_content.value.trim(),
         rich_content_ar: editor.rich_content_ar.value.trim(),
-        seo_title: editor.seo_title.value.trim(),
-        seo_description: editor.seo_description.value.trim(),
+        seo_title: editor.seo_title.value.trim() || buildAutoSeoTitle(),
+        seo_description: editor.seo_description.value.trim() || buildAutoSeoDescription(),
         category: editor.category.value,
         karat: Number(editor.karat.value),
         weight_grams: Number(editor.weight_grams.value),
@@ -672,6 +1068,7 @@
         published: editor.published.checked
       };
       AryamCatalog.saveProduct(product).then(function () {
+        clearDraft(draftId);
         editor.hidden = true;
         var tb = document.getElementById("mainToolbar");
         if (tb) tb.hidden = false;
@@ -709,5 +1106,6 @@
   }
 
   refreshSpot();
+  setInterval(refreshSpot, 60 * 1000);
   loadTable();
 })();

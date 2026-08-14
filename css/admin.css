@@ -288,14 +288,30 @@ body.admin-body {
 .editor-grid .full { grid-column: 1 / -1; }
 
 .editor-grid label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+  display: block;
   font-size: 0.82rem;
   color: var(--muted);
   min-width: 0;
   max-width: 100%;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+}
+
+.editor-grid label > input,
+.editor-grid label > textarea,
+.editor-grid label > select {
+  display: block;
+  margin-top: 0.4rem;
+}
+
+.editor-grid label > .field-error {
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.editor-grid label > .req,
+.editor-grid label > .optional {
+  display: inline;
+  white-space: nowrap;
 }
 
 .editor-grid input,
@@ -340,14 +356,25 @@ body.admin-body {
   letter-spacing: 0;
 }
 
-.editor-section-label {
-  margin: 0.85rem 0 0.15rem;
-  padding-top: 0.85rem;
-  border-top: 1px solid var(--line);
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.draft-status {
+  margin: -0.5rem 0 1rem;
+  font-size: 0.82rem;
   color: var(--gold-2);
+}
+
+.draft-status[hidden] {
+  display: none;
+}
+
+.draft-status button {
+  margin-left: 0.5rem;
+  background: none;
+  border: 0;
+  color: var(--cream);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
 }
 
 .price-mode-box {
@@ -445,6 +472,7 @@ label.is-invalid .field-error,
 .editor-grid textarea { min-height: 96px; resize: vertical; }
 
 .editor-grid label.checkbox-row {
+  display: flex;
   flex-direction: row;
   align-items: center;
   gap: 0.7rem;
@@ -454,6 +482,8 @@ label.is-invalid .field-error,
   width: 22px;
   height: 22px;
   min-height: 0;
+  margin-top: 0;
+  display: inline-block;
 }
 
 /* Photo upload */
@@ -708,6 +738,17 @@ label.is-invalid .field-error,
   word-break: break-word;
 }
 .spot-bar strong { color: var(--gold-2); }
+.spot-stamp { opacity: 0.75; }
+.spot-refresh {
+  margin-left: 0.25rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--gold-2);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
 
 .admin-side-toggle {
   display: none;

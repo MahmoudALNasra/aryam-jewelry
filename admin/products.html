@@ -72,6 +72,7 @@
 
       <form id="productEditor" class="login-card" hidden novalidate>
         <h2 id="editorTitle" style="font-family:var(--font-display);margin:0 0 1rem;font-size:1.35rem">New piece</h2>
+        <p class="draft-status" id="draftStatus" hidden></p>
         <input type="hidden" name="id" />
         <input type="hidden" name="image_url" id="imageUrlField" />
         <input type="hidden" name="image_urls" id="imageUrlsField" value="[]" />
@@ -167,31 +168,32 @@
             <span class="field-error" hidden>Enter a fixed price of 0 or more.</span>
           </label>
 
+          <label class="full">SEO title <span class="optional">(auto from title + karat + grams)</span>
+            <input name="seo_title" autocomplete="off" placeholder="Fills in as you enter the title" />
+          </label>
+          <label class="full">SEO description <span class="optional">(auto from piece details)</span>
+            <textarea name="seo_description" rows="2" placeholder="Fills in from title, weight, category, and price"></textarea>
+          </label>
+
           <p class="editor-section-label full">Optional details</p>
 
-          <label>Title (AR) <span class="optional">(optional)</span>
-            <input name="title_ar" lang="ar" dir="rtl" autocomplete="off" />
+          <label>Title (AR) <span class="optional">(auto from English · editable)</span>
+            <input name="title_ar" lang="ar" dir="rtl" autocomplete="off" data-auto="ar-title" />
           </label>
-          <label>Slug (URL) <span class="optional">(optional · auto if blank)</span>
-            <input name="slug" placeholder="auto if blank" autocomplete="off" />
+          <label>Slug (URL) <span class="optional">(auto from title)</span>
+            <input name="slug" placeholder="auto from title" autocomplete="off" data-auto="slug" />
           </label>
           <label class="full">Short description (EN) <span class="optional">(optional)</span>
-            <textarea name="description" rows="3"></textarea>
+            <textarea name="description" rows="3" data-auto-source="desc"></textarea>
           </label>
-          <label class="full">Short description (AR) <span class="optional">(optional)</span>
-            <textarea name="description_ar" rows="2" lang="ar" dir="rtl"></textarea>
+          <label class="full">Short description (AR) <span class="optional">(auto from English · editable)</span>
+            <textarea name="description_ar" rows="2" lang="ar" dir="rtl" data-auto="ar-desc"></textarea>
           </label>
           <label class="full">Rich story (EN) <span class="optional">(optional · supports **bold**, ## headings, - lists)</span>
-            <textarea name="rich_content" rows="6" placeholder="Craft story, care tips, occasion notes…"></textarea>
+            <textarea name="rich_content" rows="6" placeholder="Craft story, care tips, occasion notes…" data-auto-source="rich"></textarea>
           </label>
-          <label class="full">Rich story (AR) <span class="optional">(optional)</span>
-            <textarea name="rich_content_ar" rows="4" lang="ar" dir="rtl"></textarea>
-          </label>
-          <label class="full">SEO title <span class="optional">(optional)</span>
-            <input name="seo_title" autocomplete="off" />
-          </label>
-          <label class="full">SEO description <span class="optional">(optional)</span>
-            <textarea name="seo_description" rows="2"></textarea>
+          <label class="full">Rich story (AR) <span class="optional">(auto from English · editable)</span>
+            <textarea name="rich_content_ar" rows="4" lang="ar" dir="rtl" data-auto="ar-rich"></textarea>
           </label>
           <label class="full">SKU <span class="optional">(optional · auto from name + grams)</span>
             <input name="sku" placeholder="Auto-filled from title + grams" autocomplete="off" />
