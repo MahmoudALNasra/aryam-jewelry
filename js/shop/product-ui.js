@@ -35,20 +35,45 @@
     if (metaDesc) metaDesc.setAttribute("content", p.seo_description || p.description || "");
 
     var price = AryamPricing.displayPrice(p);
-    var img = p.image_url || "/images/hero.jpg";
-    if (img.indexOf("../") === 0) img = "/" + img.replace(/^\.\.\//, "");
-    if (typeof AryamMedia !== "undefined") img = AryamMedia.displayUrl(img, "detail");
-    var imgFull = (typeof AryamMedia !== "undefined")
-      ? AryamMedia.displayUrl(p.image_url || img, "full")
-      : img;
+    var gallery = (p.image_urls && p.image_urls.length)
+      ? p.image_urls.slice()
+      : (p.image_url ? [p.image_url] : ["/images/hero.jpg"]);
+    gallery = gallery.map(function (u) {
+      return u.indexOf("../") === 0 ? "/" + u.replace(/^\.\.\//, "") : u;
+    });
+
+    function detailSrc(u) {
+      return typeof AryamMedia !== "undefined" ? AryamMedia.displayUrl(u, "detail") : u;
+    }
+    function fullSrc(u) {
+      return typeof AryamMedia !== "undefined" ? AryamMedia.displayUrl(u, "full") : u;
+    }
+    function thumbSrc(u) {
+      return typeof AryamMedia !== "undefined" ? AryamMedia.displayUrl(u, "thumb") : u;
+    }
+
+    var img = detailSrc(gallery[0]);
+    var imgFull = fullSrc(gallery[0]);
     var inStock = p.stock_qty > 0;
+    var thumbsHtml = gallery.length > 1
+      ? '<div class="pdp-thumbs" id="pdpThumbs">' + gallery.map(function (u, i) {
+          return (
+            '<button type="button" class="pdp-thumb' + (i === 0 ? " is-active" : "") + '" data-gallery-index="' + i + '" aria-label="Photo ' + (i + 1) + '">' +
+              '<img src="' + thumbSrc(u) + '" alt="" />' +
+            "</button>"
+          );
+        }).join("") + "</div>"
+      : "";
 
     root.innerHTML =
       '<div class="pdp-gallery">' +
         '<div class="pdp-frame" id="zoomFrame" title="Click to enlarge">' +
           '<img id="zoomImg" src="' + img + '" data-full="' + imgFull + '" alt="' + escapeHtml(p.title) + '" />' +
         "</div>" +
-        '<p class="pdp-hint">Hover to inspect detail · click to open full size</p>' +
+        thumbsHtml +
+        '<p class="pdp-hint">Hover to inspect detail · click to open full size' +
+          (gallery.length > 1 ? " · tap thumbnails for more angles" : "") +
+        "</p>" +
       "</div>" +
       '<div class="pdp-info">' +
         '<p class="eyebrow">' + p.karat + "K Gold · " + p.weight_grams + " g</p>" +
@@ -80,14 +105,15 @@
           "</button>" +
           '<a class="btn btn-ghost" href="tel:+18327627620">Call store</a>' +
         "</div>" +
-        '<p class="muted" style="color:var(--muted);font-size:0.88rem">Prices follow the shop’s selling rate per gram (set in admin), not raw spot alone. Grams on photos will be confirmed when real catalog images are uploaded.</p>' +
+        '<p class="muted" style="color:var(--muted);font-size:0.88rem">Prices follow the shop’s selling rate per gram (set in admin), not raw spot alone.</p>' +
       "</div>" +
       '<div class="lightbox" id="lightbox" role="dialog" aria-modal="true">' +
         '<button type="button" id="lbClose" aria-label="Close">×</button>' +
-        '<img src="' + imgFull + '" alt="" />' +
+        '<img id="lightboxImg" src="' + imgFull + '" alt="" />' +
       "</div>";
 
     setupZoom();
+    setupGallery(gallery, detailSrc, fullSrc);
     setupCart(p);
     AryamPricing.fetchSpot().then(function (spot) {
       if (!spot) return;
@@ -105,7 +131,8 @@
     var frame = document.getElementById("zoomFrame");
     var img = document.getElementById("zoomImg");
     var lb = document.getElementById("lightbox");
-    if (!frame || !img) return;
+    var lbImg = document.getElementById("lightboxImg");
+    if (!frame || !img || !lb) return;
 
     frame.addEventListener("mousemove", function (e) {
       if (window.matchMedia("(hover: none)").matches) return;
@@ -119,6 +146,7 @@
       img.style.transform = "scale(1)";
     });
     frame.addEventListener("click", function () {
+      if (lbImg) lbImg.src = img.getAttribute("data-full") || img.src;
       lb.classList.add("open");
     });
     document.getElementById("lbClose").addEventListener("click", function () {
@@ -126,6 +154,27 @@
     });
     lb.addEventListener("click", function (e) {
       if (e.target === lb) lb.classList.remove("open");
+    });
+  }
+
+  function setupGallery(gallery, detailSrc, fullSrc) {
+    var thumbs = document.getElementById("pdpThumbs");
+    var img = document.getElementById("zoomImg");
+    var lbImg = document.getElementById("lightboxImg");
+    if (!thumbs || !img || !gallery || gallery.length < 2) return;
+
+    thumbs.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-gallery-index]");
+      if (!btn) return;
+      var idx = Number(btn.getAttribute("data-gallery-index"));
+      if (isNaN(idx) || !gallery[idx]) return;
+      img.src = detailSrc(gallery[idx]);
+      img.setAttribute("data-full", fullSrc(gallery[idx]));
+      if (lbImg) lbImg.src = fullSrc(gallery[idx]);
+      Array.prototype.forEach.call(thumbs.querySelectorAll(".pdp-thumb"), function (el) {
+        el.classList.toggle("is-active", el === btn);
+      });
+      img.style.transform = "scale(1)";
     });
   }
 

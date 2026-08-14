@@ -23,6 +23,7 @@ create table if not exists public.products (
   stock_qty int not null default 0 check (stock_qty >= 0),
   image_path text,
   image_url text,
+  image_urls jsonb not null default '[]'::jsonb,
   published boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

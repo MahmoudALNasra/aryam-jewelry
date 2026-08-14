@@ -46,6 +46,7 @@
   var editor = document.getElementById("productEditor");
   var spotBar = document.getElementById("spotBar");
   var photoPreview = document.getElementById("photoPreview");
+  var photoStrip = document.getElementById("photoStrip");
   var photoCamera = document.getElementById("photoCamera");
   var photoGallery = document.getElementById("photoGallery");
   var uploadStatus = document.getElementById("uploadStatus");
@@ -53,11 +54,34 @@
   var uploadProgressBar = document.getElementById("uploadProgressBar");
   var uploadProgressTrack = document.getElementById("uploadProgressTrack");
   var imageUrlField = document.getElementById("imageUrlField");
+  var imageUrlsField = document.getElementById("imageUrlsField");
   var spotOz = null;
+  var MAX_PHOTOS = 8;
 
   function clearPhotoInputs() {
     if (photoCamera) photoCamera.value = "";
     if (photoGallery) photoGallery.value = "";
+  }
+
+  function getImageUrls() {
+    try {
+      var parsed = JSON.parse((imageUrlsField && imageUrlsField.value) || "[]");
+      return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function setImageUrls(urls) {
+    var list = (urls || []).filter(Boolean).slice(0, MAX_PHOTOS);
+    if (imageUrlsField) imageUrlsField.value = JSON.stringify(list);
+    if (imageUrlField) imageUrlField.value = list[0] || "";
+    renderPhotoGallery(list);
+  }
+
+  function displayThumb(url) {
+    if (typeof AryamMedia !== "undefined") return AryamMedia.displayUrl(url, "thumb");
+    return url;
   }
 
   function setUploadProgress(percent, message, visible) {
@@ -78,15 +102,31 @@
     }, 1600);
   }
 
-  function setPhotoPreview(url) {
+  function renderPhotoGallery(urls) {
+    urls = urls || getImageUrls();
     if (!photoPreview) return;
-    if (url) {
-      photoPreview.classList.add("has-image");
-      photoPreview.innerHTML = '<img src="' + url + '" alt="Product photo" />';
-    } else {
+    if (!urls.length) {
       photoPreview.classList.remove("has-image");
-      photoPreview.textContent = "Tap below to take or choose a photo";
+      photoPreview.textContent = "Tap below to add photos";
+      if (photoStrip) {
+        photoStrip.hidden = true;
+        photoStrip.innerHTML = "";
+      }
+      return;
     }
+    photoPreview.classList.add("has-image");
+    photoPreview.innerHTML = '<img src="' + displayThumb(urls[0]) + '" alt="Cover photo" />';
+    if (!photoStrip) return;
+    photoStrip.hidden = false;
+    photoStrip.innerHTML = urls.map(function (url, i) {
+      return (
+        '<div class="photo-thumb' + (i === 0 ? " is-cover" : "") + '" data-photo-index="' + i + '">' +
+          '<img src="' + displayThumb(url) + '" alt="Photo ' + (i + 1) + '" />' +
+          (i === 0 ? '<span class="thumb-cover">Cover</span>' : "") +
+          '<button type="button" class="thumb-remove" data-remove-photo="' + i + '" aria-label="Remove photo">×</button>' +
+        "</div>"
+      );
+    }).join("");
   }
 
   function refreshSpot() {
@@ -196,10 +236,11 @@
     f.making_charge.value = product ? product.making_charge : 0;
     f.stock_qty.value = product ? product.stock_qty : 1;
     imageUrlField.value = product ? (product.image_url || "") : "";
+    setImageUrls(product ? (product.image_urls && product.image_urls.length ? product.image_urls : (product.image_url ? [product.image_url] : [])) : []);
     f.published.checked = product ? !!product.published : true;
     document.getElementById("editorTitle").textContent = product ? "Edit piece" : "New piece";
-    setPhotoPreview(imageUrlField.value);
     if (uploadStatus) uploadStatus.textContent = "";
+    if (uploadProgress) uploadProgress.hidden = true;
     updatePreview();
   }
 
@@ -277,35 +318,86 @@
     });
 
     document.getElementById("btnClearPhoto").addEventListener("click", function () {
-      imageUrlField.value = "";
       clearPhotoInputs();
-      setPhotoPreview("");
+      setImageUrls([]);
       if (uploadStatus) uploadStatus.textContent = "";
       if (uploadProgress) uploadProgress.hidden = true;
       if (uploadProgressBar) uploadProgressBar.style.width = "0%";
     });
 
-    function onPhotoPicked(input) {
-      var file = input.files && input.files[0];
-      if (!file) return;
+    if (photoStrip) {
+      photoStrip.addEventListener("click", function (e) {
+        var removeBtn = e.target.closest("[data-remove-photo]");
+        if (removeBtn) {
+          e.preventDefault();
+          var removeIdx = Number(removeBtn.getAttribute("data-remove-photo"));
+          var next = getImageUrls().filter(function (_u, i) { return i !== removeIdx; });
+          setImageUrls(next);
+          return;
+        }
+        var thumb = e.target.closest("[data-photo-index]");
+        if (!thumb) return;
+        var idx = Number(thumb.getAttribute("data-photo-index"));
+        var urls = getImageUrls();
+        if (idx <= 0 || idx >= urls.length) return;
+        var chosen = urls.splice(idx, 1)[0];
+        urls.unshift(chosen);
+        setImageUrls(urls);
+      });
+    }
+
+    function uploadFilesSequentially(files) {
+      var list = Array.prototype.slice.call(files || [], 0).filter(Boolean);
+      if (!list.length) return Promise.resolve();
+      var existing = getImageUrls();
+      var room = MAX_PHOTOS - existing.length;
+      if (room <= 0) {
+        alert("Maximum " + MAX_PHOTOS + " photos per piece.");
+        return Promise.resolve();
+      }
+      if (list.length > room) {
+        list = list.slice(0, room);
+        alert("Only " + room + " more photo(s) can be added (max " + MAX_PHOTOS + ").");
+      }
+
       var hint = editor.slug.value || editor.title.value || "piece";
-      setUploadProgress(2, "Starting upload (" + AryamUpload.formatBytes(file.size) + ")…", true);
-      AryamUpload.uploadProductImage(file, hint, function (info) {
-        setUploadProgress(info.percent, info.message, true);
-      })
-        .then(function (url) {
-          imageUrlField.value = url;
-          setPhotoPreview(url);
-          if (url.indexOf("data:") === 0) {
-            setUploadProgress(100, "Saved as local preview (set up Storage for permanent cloud URLs).", true);
-          } else {
-            setUploadProgress(100, "Photo uploaded in high quality.", true);
-          }
+      var uploaded = existing.slice();
+      var i = 0;
+
+      function next() {
+        if (i >= list.length) {
+          setImageUrls(uploaded);
+          setUploadProgress(100, list.length > 1 ? "Uploaded " + list.length + " photos." : "Photo uploaded in high quality.", true);
           hideUploadProgressSoon();
-        })
-        .catch(function (err) {
-          setUploadProgress(0, "Upload failed: " + (err.message || err), true);
+          return Promise.resolve();
+        }
+        var file = list[i];
+        var n = i + 1;
+        setUploadProgress(5, "Uploading photo " + n + " of " + list.length + " (" + AryamUpload.formatBytes(file.size) + ")…", true);
+        return AryamUpload.uploadProductImage(file, hint + "-" + n, function (info) {
+          var base = ((n - 1) / list.length) * 100;
+          var span = 100 / list.length;
+          var pct = Math.round(base + ((info.percent || 0) / 100) * span);
+          setUploadProgress(pct, "Photo " + n + "/" + list.length + ": " + (info.message || "Uploading…"), true);
+        }).then(function (url) {
+          if (url) uploaded.push(url);
+          i += 1;
+          return next();
         });
+      }
+
+      return next().catch(function (err) {
+        setImageUrls(uploaded);
+        setUploadProgress(0, "Upload failed: " + (err.message || err), true);
+      });
+    }
+
+    function onPhotoPicked(input) {
+      var files = input.files;
+      if (!files || !files.length) return;
+      uploadFilesSequentially(files).then(function () {
+        clearPhotoInputs();
+      });
     }
 
     function bindPhotoInput(input) {
@@ -330,7 +422,6 @@
 
     if (btnChooseGallery && photoGallery) {
       btnChooseGallery.addEventListener("click", function () {
-        // Ensure no capture attribute (iPhone opens camera if capture is set)
         photoGallery.removeAttribute("capture");
         photoGallery.value = "";
         photoGallery.click();
@@ -339,7 +430,8 @@
 
     editor.addEventListener("submit", function (e) {
       e.preventDefault();
-      if (!imageUrlField.value.trim()) {
+      var urls = getImageUrls();
+      if (!urls.length) {
         if (!confirm("No photo yet. Save anyway?")) return;
       }
       var btn = document.getElementById("btnSave");
@@ -361,7 +453,8 @@
         sell_price_per_gram: Number(editor.sell_price_per_gram.value),
         making_charge: Number(editor.making_charge.value) || 0,
         stock_qty: Number(editor.stock_qty.value) || 0,
-        image_url: imageUrlField.value.trim(),
+        image_url: urls[0] || "",
+        image_urls: urls,
         published: editor.published.checked
       };
       AryamCatalog.saveProduct(product).then(function () {

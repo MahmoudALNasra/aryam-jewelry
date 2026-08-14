@@ -23,9 +23,31 @@
     return global.__aryamSb;
   }
 
+  function normalizeImages(p) {
+    var urls = [];
+    if (Array.isArray(p.image_urls)) {
+      urls = p.image_urls.filter(Boolean).map(String);
+    } else if (typeof p.image_urls === "string" && p.image_urls.trim()) {
+      try {
+        var parsed = JSON.parse(p.image_urls);
+        if (Array.isArray(parsed)) urls = parsed.filter(Boolean).map(String);
+      } catch (e) { /* ignore */ }
+    }
+    var primary = p.image_url || p.image_path || "";
+    if (primary && urls.indexOf(primary) < 0) urls.unshift(primary);
+    urls = urls.map(function (u) {
+      return u.indexOf("../") === 0 ? "/" + u.replace(/^\.\.\//, "") : u;
+    }).filter(function (u, i, arr) {
+      return u && arr.indexOf(u) === i;
+    });
+    return {
+      image_url: urls[0] || primary || "",
+      image_urls: urls
+    };
+  }
+
   function normalize(p) {
-    var img = p.image_url || p.image_path || "";
-    if (img.indexOf("../") === 0) img = "/" + img.replace(/^\.\.\//, "");
+    var imgs = normalizeImages(p);
     return {
       id: p.id,
       slug: p.slug,
@@ -42,7 +64,8 @@
       sell_price_per_gram: Number(p.sell_price_per_gram),
       making_charge: Number(p.making_charge) || 0,
       stock_qty: Number(p.stock_qty) || 0,
-      image_url: img,
+      image_url: imgs.image_url,
+      image_urls: imgs.image_urls,
       published: p.published !== false
     };
   }
@@ -127,20 +150,35 @@
       String(row.id).indexOf("ary-") === 0;
 
     if (sb) {
-      if (isTempId) {
-        var insertRow = Object.assign({}, row);
-        delete insertRow.id;
-        return sb.from("products").insert(insertRow).select().single().then(function (res) {
-          if (res.error) throw res.error;
+      function insertOrUpdate(payloadRow, isInsert) {
+        if (isInsert) {
+          return sb.from("products").insert(payloadRow).select().single();
+        }
+        return sb.from("products").update(payloadRow).eq("id", row.id).select().single();
+      }
+
+      function saveWithFallback(isInsert) {
+        var payload = Object.assign({}, row);
+        if (isInsert) delete payload.id;
+        else delete payload.id;
+        return insertOrUpdate(payload, isInsert).then(function (res) {
+          if (res.error) {
+            var msg = (res.error.message || "") + "";
+            if (/image_urls/i.test(msg)) {
+              delete payload.image_urls;
+              return insertOrUpdate(payload, isInsert).then(function (res2) {
+                if (res2.error) throw res2.error;
+                return normalize(res2.data);
+              });
+            }
+            throw res.error;
+          }
           return normalize(res.data);
         });
       }
-      var payload = Object.assign({}, row);
-      delete payload.id;
-      return sb.from("products").update(payload).eq("id", row.id).select().single().then(function (res) {
-        if (res.error) throw res.error;
-        return normalize(res.data);
-      });
+
+      if (isTempId) return saveWithFallback(true);
+      return saveWithFallback(false);
     }
 
     if (!row.id) row.id = "local-" + Date.now();

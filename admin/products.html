@@ -74,24 +74,26 @@
         <h2 id="editorTitle" style="font-family:var(--font-display);margin:0 0 1rem;font-size:1.35rem">New piece</h2>
         <input type="hidden" name="id" />
         <input type="hidden" name="image_url" id="imageUrlField" />
+        <input type="hidden" name="image_urls" id="imageUrlsField" value="[]" />
 
         <div class="photo-upload full" style="margin-bottom:1.25rem">
-          <div class="photo-preview" id="photoPreview">Tap below to take or choose a photo</div>
+          <div class="photo-preview" id="photoPreview">Tap below to add photos</div>
+          <div class="photo-strip" id="photoStrip" hidden></div>
           <div class="photo-actions">
             <button type="button" class="btn btn-gold btn-small" id="btnTakePhoto">Take photo</button>
-            <button type="button" class="btn btn-ghost btn-small" id="btnChooseGallery">Choose from gallery</button>
-            <button type="button" class="btn btn-ghost btn-small photo-clear" id="btnClearPhoto">Clear photo</button>
+            <button type="button" class="btn btn-ghost btn-small" id="btnChooseGallery">Add from gallery</button>
+            <button type="button" class="btn btn-ghost btn-small photo-clear" id="btnClearPhoto">Clear all photos</button>
           </div>
           <!-- Separate inputs: capture only on camera. Gallery must never use capture (iPhone). -->
           <input type="file" id="photoCamera" class="photo-file-input" accept="image/*" capture="environment" />
-          <input type="file" id="photoGallery" class="photo-file-input" accept="image/*,image/heic,image/heif,.heic,.heif" />
+          <input type="file" id="photoGallery" class="photo-file-input" accept="image/*,image/heic,image/heif,.heic,.heif" multiple />
           <div class="upload-progress" id="uploadProgress" hidden>
             <div class="upload-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="uploadProgressTrack">
               <div class="upload-progress-bar" id="uploadProgressBar"></div>
             </div>
             <p class="upload-status" id="uploadStatus"></p>
           </div>
-          <p class="photo-hint">Take photo = camera. Choose from gallery = your library. High-quality upload (up to 4K) with progress — prefers Cloudinary CDN, falls back to Supabase Storage.</p>
+          <p class="photo-hint">Add multiple angles (up to 8). First photo is the cover. Cloudinary first, Supabase Storage fallback.</p>
         </div>
 
         <div class="editor-grid">

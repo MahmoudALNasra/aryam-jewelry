@@ -263,6 +263,36 @@ body.shop-body {
   transform-origin: center center;
 }
 
+.pdp-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.pdp-thumb {
+  width: 64px;
+  height: 80px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #12100c;
+  cursor: pointer;
+}
+
+.pdp-thumb.is-active {
+  border-color: var(--gold-2);
+  box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.4);
+}
+
+.pdp-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .pdp-hint {
   margin-top: 0.7rem;
   font-size: 0.82rem;
