@@ -452,6 +452,26 @@ section[id] { scroll-margin-top: 84px; }
 .collection-card {
   width: clamp(280px, 27vw, 380px);
   flex-shrink: 0;
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.35s ease;
+}
+a.collection-card:focus-visible {
+  outline: 2px solid var(--gold, #c9a84c);
+  outline-offset: 4px;
+}
+a.collection-card:hover {
+  transform: translateY(-4px);
+}
+.card-cta {
+  display: inline-block;
+  margin-top: 0.85rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold, #c9a84c);
 }
 .card-media {
   position: relative;

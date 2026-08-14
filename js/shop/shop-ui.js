@@ -5,7 +5,64 @@
   var grid = document.getElementById("productGrid");
   if (!grid) return;
 
+  var ALLOWED_CATEGORIES = {
+    bridal: true,
+    bangles: true,
+    necklaces: true,
+    rings: true,
+    coins: true,
+    earrings: true,
+    other: true
+  };
+
   var state = { category: "all", karat: "all", inStockOnly: false, products: [] };
+
+  function readFiltersFromUrl() {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var cat = (params.get("category") || "").toLowerCase().trim();
+      var karat = (params.get("karat") || "").trim();
+      var stock = params.get("stock");
+
+      if (cat && (cat === "all" || ALLOWED_CATEGORIES[cat])) {
+        state.category = cat;
+      }
+      if (karat === "all" || karat === "18" || karat === "21" || karat === "22" || karat === "24") {
+        state.karat = karat;
+      }
+      if (stock === "1" || stock === "true") {
+        state.inStockOnly = true;
+      }
+    } catch (e) {
+      /* ignore bad query strings */
+    }
+  }
+
+  function syncUrl() {
+    try {
+      var params = new URLSearchParams();
+      if (state.category && state.category !== "all") params.set("category", state.category);
+      if (state.karat && state.karat !== "all") params.set("karat", state.karat);
+      if (state.inStockOnly) params.set("stock", "1");
+      var qs = params.toString();
+      var next = window.location.pathname + (qs ? "?" + qs : "") + window.location.hash;
+      window.history.replaceState({}, "", next);
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function syncFilterChips() {
+    document.querySelectorAll('[data-filter="category"]').forEach(function (btn) {
+      btn.classList.toggle("active", btn.getAttribute("data-value") === state.category);
+    });
+    document.querySelectorAll('[data-filter="karat"]').forEach(function (btn) {
+      btn.classList.toggle("active", btn.getAttribute("data-value") === state.karat);
+    });
+    document.querySelectorAll('[data-filter="stock"]').forEach(function (btn) {
+      btn.classList.toggle("active", state.inStockOnly);
+    });
+  }
 
   function cardHTML(p) {
     var price = AryamPricing.formatMoney(AryamPricing.displayPrice(p));
@@ -88,9 +145,13 @@
           b.classList.toggle("active", b === btn);
         });
       }
+      syncUrl();
       render();
     });
   });
+
+  readFiltersFromUrl();
+  syncFilterChips();
 
   AryamCatalog.loadAll(false).then(function (products) {
     state.products = products;
