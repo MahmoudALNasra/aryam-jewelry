@@ -19,8 +19,8 @@
         'loading="lazy" allowtransparency="true"></iframe>' +
       '<aside class="ig-live-side">' +
         '<div class="ig-live-brand">' +
-          '<img class="ig-live-avatar" src="https://scontent-hou1-1.cdninstagram.com/v/t51.2885-19/489007170_1196515978766026_5777782967977086896_n.jpg?stp=dst-jpg_s150x150_tt6" ' +
-            'alt="ARYAM JEWELRY Instagram profile" width="72" height="72" loading="lazy" referrerpolicy="no-referrer" ' +
+          '<img class="ig-live-avatar" src="/images/logo-aryam.jpg" ' +
+            'alt="ARYAM JEWELRY Instagram profile" width="72" height="72" loading="lazy" ' +
             'onerror="this.style.display=\'none\'" />' +
           '<div>' +
             '<p class="ig-live-kicker">@' + HANDLE + "</p>" +
