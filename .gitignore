@@ -1,2 +1,31 @@
+# Secrets / local env
+.env
+.env.*
+!.env.example
+
+# Vercel
+.vercel
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Raw Drive downloads (optimized .jpg files are what the site uses)
+images/products/*.jpeg
+
 # Local backups (dated zips + exports). Do not commit — may contain catalog/order data.
 backups/
+
+# Temp
+*.tmp
+maps.html
+maps2.html
+supabase/.temp/

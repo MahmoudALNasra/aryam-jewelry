@@ -81,10 +81,10 @@ function Export-Table {
     } -Method Get
     $rows | ConvertTo-Json -Depth 20 | Set-Content -Encoding UTF8 $OutFile
     $count = if ($rows -is [Array]) { $rows.Count } else { if ($null -eq $rows) { 0 } else { 1 } }
-    Write-Host "  exported $Table ($count rows)"
+    Write-Host ("  exported {0} ({1} rows)" -f $Table, $count)
     return $true
   } catch {
-    Write-Warning "  failed $Table : $($_.Exception.Message)"
+    Write-Warning ("  failed {0} : {1}" -f $Table, $_.Exception.Message)
     return $false
   }
 }
