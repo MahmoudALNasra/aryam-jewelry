@@ -2,7 +2,7 @@
 (function () {
   "use strict";
 
-  var CACHE_KEY = "aryamGoogleReviewsV4";
+  var CACHE_KEY = "aryamGoogleReviewsV5";
   var DAY_MS = 24 * 60 * 60 * 1000;
   var PLACE_ID = "ChIJvZYXdLTDQIYRthuVnPvmRzI";
   var MAPS_REVIEWS_URL =
@@ -40,19 +40,44 @@
 
   function reviewTs(review) {
     var ts = review.time != null ? Number(review.time) : NaN;
-    if (isNaN(ts) || ts <= 0) return 0;
-    if (ts < 1e12) ts = ts * 1000;
-    return ts;
+    if (!isNaN(ts) && ts > 0) {
+      if (ts < 1e12) ts = ts * 1000;
+      return ts;
+    }
+    return relativeToTs(review.relative_time_description);
+  }
+
+  function relativeToTs(desc) {
+    var s = String(desc || "").toLowerCase().trim();
+    if (!s || s === "google review") return 0;
+    var n = 1;
+    var m = s.match(/(\d+)/);
+    if (m) n = parseInt(m[1], 10);
+    else if (/\ba\b|\ban\b/.test(s)) n = 1;
+    var ms = 0;
+    if (s.indexOf("hour") >= 0 || s.indexOf("minute") >= 0 || s.indexOf("just") >= 0) {
+      ms = s.indexOf("minute") >= 0 ? n * 6e4 : (s.indexOf("just") >= 0 ? 0 : n * 36e5);
+    } else if (s.indexOf("day") >= 0) ms = n * 864e5;
+    else if (s.indexOf("week") >= 0) ms = n * 7 * 864e5;
+    else if (s.indexOf("month") >= 0) ms = n * 30 * 864e5;
+    else if (s.indexOf("year") >= 0) ms = n * 365 * 864e5;
+    else return 0;
+    return Date.now() - ms;
+  }
+
+  function sortNewestFirst(reviews) {
+    return reviews.slice().sort(function (a, b) {
+      return reviewTs(b) - reviewTs(a);
+    });
   }
 
   function formatRelativeTime(review) {
-    // Prefer Google's own relative string when present
     if (review.relative_time_description &&
         review.relative_time_description !== "Google review") {
       return review.relative_time_description;
     }
     var ts = reviewTs(review);
-    if (!ts) return "Google review";
+    if (!ts) return "";
     var diff = Math.max(0, Date.now() - ts);
     var sec = Math.floor(diff / 1000);
     var min = Math.floor(sec / 60);
@@ -68,12 +93,6 @@
     if (week < 5) return week === 1 ? "1 week ago" : week + " weeks ago";
     if (month < 12) return month === 1 ? "1 month ago" : month + " months ago";
     return year === 1 ? "1 year ago" : year + " years ago";
-  }
-
-  function sortNewestFirst(reviews) {
-    return reviews.slice().sort(function (a, b) {
-      return reviewTs(b) - reviewTs(a);
-    });
   }
 
   function reviewLink(r) {
@@ -106,8 +125,7 @@
     pageIndex = ((i % pageCount) + pageCount) % pageCount;
     var track = grid.querySelector(".review-track");
     if (!track) return;
-    var offset = pageIndex * 100;
-    track.style.transform = "translateX(-" + offset + "%)";
+    track.style.transform = "translateX(-" + pageIndex * 100 + "%)";
     var dots = grid.querySelectorAll(".review-dots button");
     for (var d = 0; d < dots.length; d++) {
       dots[d].setAttribute("aria-current", d === pageIndex ? "true" : "false");
@@ -131,7 +149,24 @@
         if (!map[k] || reviewTs(r) > reviewTs(map[k])) map[k] = r;
       }
     }
-    return sortNewestFirst(Object.keys(map).map(function (k) { return map[k]; }));
+    // Collapse same author (seed + Google duplicates)
+    var byAuthor = {};
+    Object.keys(map).forEach(function (k) {
+      var r = map[k];
+      var a = String(r.author_name || "").toLowerCase().trim();
+      var prev = byAuthor[a];
+      if (!prev) {
+        byAuthor[a] = r;
+        return;
+      }
+      var prefer =
+        reviewTs(r) > reviewTs(prev) ||
+        ((r.profile_photo_url || "").indexOf("googleusercontent") >= 0 &&
+          (prev.profile_photo_url || "").indexOf("googleusercontent") < 0) ||
+        String(r.text || "").length > String(prev.text || "").length;
+      if (prefer) byAuthor[a] = r;
+    });
+    return sortNewestFirst(Object.keys(byAuthor).map(function (a) { return byAuthor[a]; }));
   }
 
   function cardHtml(r) {
@@ -148,10 +183,10 @@
         '<div class="stars" aria-label="' + (r.rating || 5) + ' out of 5 stars">' + stars(r.rating) + "</div>" +
         '<p class="review-quote">&ldquo;' + esc(shown) + "&rdquo;</p>" +
         (long ? '<span class="review-more">Read more on Google</span>' : '<span class="review-more" hidden></span>') +
-        "<div class=\"review-by\">" +
+        '<div class="review-by">' +
           '<img class="review-avatar" src="' + esc(avatarUrl(r)) + '" alt="" width="44" height="44" loading="lazy" referrerpolicy="no-referrer" />' +
-          '<div class="who"><strong>' + esc(r.author_name || "Google reviewer") + "</strong>" +
-          '<span class="review-source">Google review</span></div>' +
+          '<div class="who"><strong>' + esc(r.author_name || "Google reviewer") + "</strong></div>" +
+          '<span class="review-badge">Google reviews</span>' +
         "</div>" +
       "</a>"
     );

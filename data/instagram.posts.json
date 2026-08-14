@@ -1,0 +1,43 @@
+{
+  "handle": "aryamjewelry0",
+  "profileUrl": "https://www.instagram.com/aryamjewelry0/",
+  "updated_at": "2026-08-14T00:00:00.000Z",
+  "posts": [
+    {
+      "url": "https://www.instagram.com/aryamjewelry0/",
+      "cover": "/images/bridal-set.jpg",
+      "caption": "Bridal & wedding gold sets",
+      "type": "reel"
+    },
+    {
+      "url": "https://www.instagram.com/aryamjewelry0/",
+      "cover": "/images/bangles.jpg",
+      "caption": "Bangles & ghawayish",
+      "type": "reel"
+    },
+    {
+      "url": "https://www.instagram.com/aryamjewelry0/",
+      "cover": "/images/necklaces.jpg",
+      "caption": "Chains & necklaces",
+      "type": "reel"
+    },
+    {
+      "url": "https://www.instagram.com/aryamjewelry0/",
+      "cover": "/images/rings.jpg",
+      "caption": "Gold rings",
+      "type": "image"
+    },
+    {
+      "url": "https://www.instagram.com/aryamjewelry0/",
+      "cover": "/images/gold-coins.jpg",
+      "caption": "Coins & bars",
+      "type": "image"
+    },
+    {
+      "url": "https://www.instagram.com/aryamjewelry0/",
+      "cover": "/images/interior.jpg",
+      "caption": "Inside the Houston showroom",
+      "type": "image"
+    }
+  ]
+}

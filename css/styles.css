@@ -726,6 +726,9 @@ a.review-card:hover {
   align-items: center;
   gap: 0.75rem;
   margin-top: auto;
+  position: relative;
+  padding-right: 7rem;
+  min-height: 44px;
 }
 .review-avatar {
   width: 44px;
@@ -736,9 +739,34 @@ a.review-card:hover {
   background: #1a1612;
   flex-shrink: 0;
 }
-.review-card figcaption .who { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
-.review-card figcaption strong { font-size: 0.95rem; color: var(--gold-2); }
-.review-card figcaption span { font-size: 0.8rem; color: var(--muted); }
+.review-card .who {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  flex: 1;
+}
+.review-card .who strong {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--gold-2);
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.review-badge {
+  position: absolute;
+  right: 0;
+  bottom: 0.15rem;
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
 
 .review-dots {
   display: flex;
@@ -762,6 +790,145 @@ a.review-card:hover {
 }
 
 .reviews-cta { margin-top: 2.6rem; text-align: center; display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; }
+
+/* ---------- Instagram ---------- */
+.instagram {
+  background:
+    radial-gradient(55% 50% at 85% 10%, rgba(212, 175, 55, 0.08) 0%, transparent 60%),
+    var(--bg-2);
+  border-block: 1px solid var(--line-soft);
+}
+.ig-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: clamp(1.8rem, 3vw, 2.6rem);
+  flex-wrap: wrap;
+}
+.ig-head .section-intro { max-width: 48ch; margin-bottom: 0; }
+.ig-head .btn { flex-shrink: 0; }
+.ig-showcase {
+  overflow: hidden;
+  margin-inline: calc(50% - 50vw);
+  padding-inline: max(1.25rem, calc(50vw - 620px));
+  mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+.ig-track {
+  display: flex;
+  gap: 1rem;
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+  width: max-content;
+}
+.ig-card {
+  flex: 0 0 min(72vw, 280px);
+  width: min(72vw, 280px);
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: #0e0c0a;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  aspect-ratio: 9 / 14;
+  display: flex;
+  flex-direction: column;
+}
+.ig-card-embed {
+  background: #000;
+}
+.ig-card-embed iframe {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #000;
+}
+.ig-card-embed .ig-open {
+  position: absolute;
+  left: 0.7rem;
+  bottom: 0.7rem;
+  z-index: 2;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #0b0a08;
+  background: var(--gold);
+  padding: 0.4rem 0.65rem;
+  border-radius: 999px;
+}
+.ig-media {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.ig-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scale(1.02);
+  transition: transform 0.7s ease;
+}
+.ig-card-cover:hover .ig-media img { transform: scale(1.08); }
+.ig-grad {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 45%, rgba(8, 7, 6, 0.92) 100%);
+  pointer-events: none;
+}
+.ig-play {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(212, 175, 55, 0.92);
+  color: #0b0a08;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  z-index: 1;
+  animation: igPulse 2.4s ease-in-out infinite;
+}
+@keyframes igPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+.ig-meta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  padding: 1rem 1rem 1.1rem;
+}
+.ig-handle {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.25rem;
+}
+.ig-meta p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--cream);
+  line-height: 1.35;
+}
+.ig-note {
+  margin-top: 1.6rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+.ig-note a { color: var(--gold-2); }
 
 /* ---------- Visit ---------- */
 .visit { background: var(--bg-2); border-block: 1px solid var(--line-soft); }
