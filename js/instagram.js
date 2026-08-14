@@ -1,18 +1,23 @@
-/* Instagram — official embeds in a grid (up to 9). Prefers Supabase cache; admin can force-update anytime. */
+/* Instagram embeds — same pattern as reviews: 3 visible, rotate through up to 9 */
 (function () {
   "use strict";
 
-  var CACHE_KEY = "aryamInstagramPostsV4";
+  var CACHE_KEY = "aryamInstagramPostsV5";
   var DAY_MS = 24 * 60 * 60 * 1000;
   var MAX_POSTS = 9;
+  var ROTATE_MS = 4200;
   var IG_PROFILE = "https://www.instagram.com/aryamjewelry0/";
   var HANDLE = "aryamjewelry0";
 
-  var grid = document.getElementById("igTrack");
+  var root = document.getElementById("igCarousel");
   var emptyEl = document.getElementById("igEmpty");
-  if (!grid) return;
+  if (!root) return;
 
   var cfg = window.ARYAM_CONFIG || {};
+  var rotateTimer = null;
+  var pageIndex = 0;
+  var perPage = 3;
+  var lastPayload = null;
 
   function esc(s) {
     return String(s || "").replace(/[&<>"']/g, function (c) {
@@ -42,7 +47,38 @@
     }).slice(0, MAX_POSTS);
   }
 
-  function embedIframe(post) {
+  function visibleCount() {
+    if (window.matchMedia("(max-width: 900px)").matches) return 1;
+    return 3;
+  }
+
+  function stopRotate() {
+    if (rotateTimer) {
+      clearInterval(rotateTimer);
+      rotateTimer = null;
+    }
+  }
+
+  function goToPage(i, pageCount) {
+    pageIndex = ((i % pageCount) + pageCount) % pageCount;
+    var track = root.querySelector(".ig-track");
+    if (!track) return;
+    track.style.transform = "translateX(-" + pageIndex * 100 + "%)";
+    var dots = root.querySelectorAll(".ig-dots button");
+    for (var d = 0; d < dots.length; d++) {
+      dots[d].setAttribute("aria-current", d === pageIndex ? "true" : "false");
+    }
+  }
+
+  function startRotate(pageCount) {
+    stopRotate();
+    if (pageCount <= 1) return;
+    rotateTimer = setInterval(function () {
+      goToPage(pageIndex + 1, pageCount);
+    }, ROTATE_MS);
+  }
+
+  function embedCard(post) {
     var url = cleanUrl(post.url);
     var src = esc(url + "/embed/?cr=1&v=14&wp=540");
     return (
@@ -57,20 +93,24 @@
   }
 
   function render(data) {
+    lastPayload = data;
     var posts = newestFirst((data && data.posts) || []).filter(function (p) {
       return isPostPermalink(p.url);
     });
 
+    stopRotate();
+    pageIndex = 0;
+
     if (!posts.length) {
-      grid.innerHTML = "";
-      grid.hidden = true;
+      root.innerHTML = "";
+      root.hidden = true;
       if (emptyEl) {
         emptyEl.hidden = false;
         emptyEl.innerHTML =
           '<div class="ig-fallback">' +
             '<iframe class="ig-profile-frame" title="@' + HANDLE + ' on Instagram" ' +
               'src="https://www.instagram.com/' + HANDLE + '/embed" loading="lazy" allowtransparency="true"></iframe>' +
-            '<p>Instagram embeds are managed in Admin → Instagram posts. Paste public /reel/ or /p/ links (up to 9) and click Save &amp; publish.</p>' +
+            '<p>Add up to 9 public /reel/ or /p/ links in Admin → Instagram posts, then Save &amp; publish.</p>' +
             '<a class="btn btn-gold" href="' + IG_PROFILE + '" target="_blank" rel="noopener">Go to Instagram</a>' +
           "</div>";
       }
@@ -81,8 +121,50 @@
       emptyEl.hidden = true;
       emptyEl.innerHTML = "";
     }
-    grid.hidden = false;
-    grid.innerHTML = posts.map(embedIframe).join("");
+    root.hidden = false;
+
+    perPage = visibleCount();
+    var pages = [];
+    for (var i = 0; i < posts.length; i += perPage) {
+      pages.push(posts.slice(i, i + perPage));
+    }
+
+    var trackHtml = pages.map(function (page) {
+      return '<div class="ig-page">' + page.map(embedCard).join("") + "</div>";
+    }).join("");
+
+    var dotsHtml = "";
+    if (pages.length > 1) {
+      dotsHtml =
+        '<div class="ig-dots" role="tablist" aria-label="Instagram slides">' +
+        pages.map(function (_, i) {
+          return (
+            '<button type="button" aria-label="Show Instagram page ' + (i + 1) + '"' +
+            (i === 0 ? ' aria-current="true"' : "") + "></button>"
+          );
+        }).join("") +
+        "</div>";
+    }
+
+    root.innerHTML =
+      '<div class="ig-viewport">' +
+        '<div class="ig-track">' + trackHtml + "</div>" +
+      "</div>" +
+      dotsHtml;
+
+    var dots = root.querySelectorAll(".ig-dots button");
+    for (var d = 0; d < dots.length; d++) {
+      (function (idx) {
+        dots[idx].addEventListener("click", function () {
+          goToPage(idx, pages.length);
+          startRotate(pages.length);
+        });
+      })(d);
+    }
+
+    root.onmouseenter = stopRotate;
+    root.onmouseleave = function () { startRotate(pages.length); };
+    startRotate(pages.length);
   }
 
   function readLocal() {
@@ -138,20 +220,29 @@
       .catch(function () { return null; });
   }
 
+  var resizeTimer = null;
+  window.addEventListener("resize", function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      if (lastPayload && visibleCount() !== perPage) render(lastPayload);
+      else {
+        var count = root.querySelectorAll(".ig-page").length;
+        if (count) goToPage(pageIndex, count);
+      }
+    }, 200);
+  });
+
   function boot() {
     var local = readLocal();
     if (local) render(local);
 
-    // Always check Supabase so Admin "Save & publish" shows up immediately
     Promise.all([loadFromSupabase(), loadFile()]).then(function (pair) {
       var remote = pair[0];
       var file = pair[1];
       var pick = null;
-
       if (remote && ts(remote) >= ts(local) && ts(remote) >= ts(file)) pick = remote;
       else if (file && ts(file) > ts(remote)) pick = file;
       else pick = remote || file || local;
-
       if (pick) {
         writeLocal(pick);
         render(pick);
