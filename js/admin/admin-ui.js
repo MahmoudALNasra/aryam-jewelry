@@ -49,12 +49,33 @@
   var photoCamera = document.getElementById("photoCamera");
   var photoGallery = document.getElementById("photoGallery");
   var uploadStatus = document.getElementById("uploadStatus");
+  var uploadProgress = document.getElementById("uploadProgress");
+  var uploadProgressBar = document.getElementById("uploadProgressBar");
+  var uploadProgressTrack = document.getElementById("uploadProgressTrack");
   var imageUrlField = document.getElementById("imageUrlField");
   var spotOz = null;
 
   function clearPhotoInputs() {
     if (photoCamera) photoCamera.value = "";
     if (photoGallery) photoGallery.value = "";
+  }
+
+  function setUploadProgress(percent, message, visible) {
+    if (uploadProgress) {
+      if (visible === false) uploadProgress.hidden = true;
+      else uploadProgress.hidden = false;
+    }
+    var p = Math.max(0, Math.min(100, Math.round(percent || 0)));
+    if (uploadProgressBar) uploadProgressBar.style.width = p + "%";
+    if (uploadProgressTrack) uploadProgressTrack.setAttribute("aria-valuenow", String(p));
+    if (uploadStatus && message != null) uploadStatus.textContent = message;
+  }
+
+  function hideUploadProgressSoon() {
+    setTimeout(function () {
+      if (uploadProgress) uploadProgress.hidden = true;
+      if (uploadProgressBar) uploadProgressBar.style.width = "0%";
+    }, 1600);
   }
 
   function setPhotoPreview(url) {
@@ -259,23 +280,30 @@
       clearPhotoInputs();
       setPhotoPreview("");
       if (uploadStatus) uploadStatus.textContent = "";
+      if (uploadProgress) uploadProgress.hidden = true;
+      if (uploadProgressBar) uploadProgressBar.style.width = "0%";
     });
 
     function onPhotoPicked(input) {
       var file = input.files && input.files[0];
       if (!file) return;
-      uploadStatus.textContent = "Compressing & uploading…";
       var hint = editor.slug.value || editor.title.value || "piece";
-      AryamUpload.uploadProductImage(file, hint)
+      setUploadProgress(2, "Starting upload (" + AryamUpload.formatBytes(file.size) + ")…", true);
+      AryamUpload.uploadProductImage(file, hint, function (info) {
+        setUploadProgress(info.percent, info.message, true);
+      })
         .then(function (url) {
           imageUrlField.value = url;
           setPhotoPreview(url);
-          uploadStatus.textContent = url.indexOf("data:") === 0
-            ? "Saved as local preview (set up Storage for permanent cloud URLs)."
-            : "Photo uploaded.";
+          if (url.indexOf("data:") === 0) {
+            setUploadProgress(100, "Saved as local preview (set up Storage for permanent cloud URLs).", true);
+          } else {
+            setUploadProgress(100, "Photo uploaded in high quality.", true);
+          }
+          hideUploadProgressSoon();
         })
         .catch(function (err) {
-          uploadStatus.textContent = "Upload failed: " + (err.message || err);
+          setUploadProgress(0, "Upload failed: " + (err.message || err), true);
         });
     }
 

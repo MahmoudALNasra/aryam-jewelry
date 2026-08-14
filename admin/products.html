@@ -85,8 +85,13 @@
           <!-- Separate inputs: capture only on camera. Gallery must never use capture (iPhone). -->
           <input type="file" id="photoCamera" class="photo-file-input" accept="image/*" capture="environment" />
           <input type="file" id="photoGallery" class="photo-file-input" accept="image/*,image/heic,image/heif,.heic,.heif" />
-          <p class="upload-status" id="uploadStatus"></p>
-          <p class="photo-hint">Take photo = camera. Choose from gallery = your photo library (scroll &amp; pick). Images are compressed, then uploaded when Storage is connected.</p>
+          <div class="upload-progress" id="uploadProgress" hidden>
+            <div class="upload-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="uploadProgressTrack">
+              <div class="upload-progress-bar" id="uploadProgressBar"></div>
+            </div>
+            <p class="upload-status" id="uploadStatus"></p>
+          </div>
+          <p class="photo-hint">Take photo = camera. Choose from gallery = your library. Photos stay high quality (up to 4K) with an upload progress bar for larger files.</p>
         </div>
 
         <div class="editor-grid">

@@ -390,11 +390,37 @@ body.admin-body {
   text-align: center;
 }
 
+.upload-progress {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.upload-progress[hidden] {
+  display: none;
+}
+
+.upload-progress-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  overflow: hidden;
+}
+
+.upload-progress-bar {
+  height: 100%;
+  width: 0%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #b8922a, #e4c76b);
+  transition: width 0.18s ease-out;
+}
+
 .upload-status {
   font-size: 0.85rem;
   color: var(--gold-2);
   text-align: center;
   min-height: 1.2em;
+  margin: 0;
 }
 
 .price-preview {
