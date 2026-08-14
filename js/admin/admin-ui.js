@@ -80,6 +80,9 @@
   }
 
   function displayThumb(url) {
+    if (typeof AryamMedia !== "undefined" && AryamMedia.isVideoUrl && AryamMedia.isVideoUrl(url)) {
+      return AryamMedia.posterUrl(url, "thumb");
+    }
     if (typeof AryamMedia !== "undefined") return AryamMedia.displayUrl(url, "thumb");
     return url;
   }
@@ -107,7 +110,7 @@
     if (!photoPreview) return;
     if (!urls.length) {
       photoPreview.classList.remove("has-image");
-      photoPreview.textContent = "Tap below to add photos";
+      photoPreview.textContent = "Tap below to add photos or videos";
       if (photoStrip) {
         photoStrip.hidden = true;
         photoStrip.innerHTML = "";
@@ -115,15 +118,24 @@
       return;
     }
     photoPreview.classList.add("has-image");
-    photoPreview.innerHTML = '<img src="' + displayThumb(urls[0]) + '" alt="Cover photo" />';
+    var cover = urls[0];
+    if (typeof AryamMedia !== "undefined" && AryamMedia.isVideoUrl(cover)) {
+      photoPreview.innerHTML =
+        '<video src="' + cover + '" poster="' + displayThumb(cover) + '" muted playsinline controls loop></video>' +
+        '<span class="media-badge">Video</span>';
+    } else {
+      photoPreview.innerHTML = '<img src="' + displayThumb(cover) + '" alt="Cover media" />';
+    }
     if (!photoStrip) return;
     photoStrip.hidden = false;
     photoStrip.innerHTML = urls.map(function (url, i) {
+      var video = typeof AryamMedia !== "undefined" && AryamMedia.isVideoUrl(url);
       return (
-        '<div class="photo-thumb' + (i === 0 ? " is-cover" : "") + '" data-photo-index="' + i + '">' +
-          '<img src="' + displayThumb(url) + '" alt="Photo ' + (i + 1) + '" />' +
+        '<div class="photo-thumb' + (i === 0 ? " is-cover" : "") + (video ? " is-video" : "") + '" data-photo-index="' + i + '">' +
+          '<img src="' + displayThumb(url) + '" alt="Media ' + (i + 1) + '" />' +
+          (video ? '<span class="thumb-video">Video</span>' : "") +
           (i === 0 ? '<span class="thumb-cover">Cover</span>' : "") +
-          '<button type="button" class="thumb-remove" data-remove-photo="' + i + '" aria-label="Remove photo">×</button>' +
+          '<button type="button" class="thumb-remove" data-remove-photo="' + i + '" aria-label="Remove">×</button>' +
         "</div>"
       );
     }).join("");
@@ -150,7 +162,10 @@
   function imgSrc(p) {
     var u = (p && p.image_url) || "/images/hero.jpg";
     if (u.indexOf("../") === 0) u = "/" + u.replace(/^\.\.\//, "");
-    if (typeof AryamMedia !== "undefined") return AryamMedia.displayUrl(u, "thumb");
+    if (typeof AryamMedia !== "undefined") {
+      if (AryamMedia.isVideoUrl(u)) return AryamMedia.posterUrl(u, "thumb");
+      return AryamMedia.displayUrl(u, "thumb");
+    }
     return u;
   }
 

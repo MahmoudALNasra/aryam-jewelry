@@ -31,11 +31,18 @@
   function cardHTML(p) {
     var price = AryamPricing.formatMoney(AryamPricing.displayPrice(p));
     var img = p.image_url || "/images/hero.jpg";
-    if (typeof AryamMedia !== "undefined") img = AryamMedia.displayUrl(img, "thumb");
-    else if (img.indexOf("../") === 0) img = "/" + img.replace(/^\.\.\//, "");
+    var video = typeof AryamMedia !== "undefined" && AryamMedia.isVideoUrl(img);
+    if (typeof AryamMedia !== "undefined") {
+      img = video ? AryamMedia.posterUrl(img, "thumb") : AryamMedia.displayUrl(img, "thumb");
+    } else if (img.indexOf("../") === 0) {
+      img = "/" + img.replace(/^\.\.\//, "");
+    }
     return (
       '<a class="product-card related-card" href="/shop/product?slug=' + encodeURIComponent(p.slug) + '">' +
-        '<div class="media"><img src="' + img + '" alt="' + escapeAttr(p.title) + '" loading="lazy" width="400" height="520" /></div>' +
+        '<div class="media">' +
+          (video ? '<span class="media-video-badge">Video</span>' : "") +
+          '<img src="' + img + '" alt="' + escapeAttr(p.title) + '" loading="lazy" width="400" height="520" />' +
+        "</div>" +
         '<div class="body">' +
           '<span class="meta">' + p.karat + "K · " + p.weight_grams + " g</span>" +
           "<h3>" + escapeHtml(p.title) + "</h3>" +
@@ -131,17 +138,43 @@
       return typeof AryamMedia !== "undefined" ? AryamMedia.displayUrl(u, "full") : u;
     }
     function thumbSrc(u) {
+      if (typeof AryamMedia !== "undefined" && AryamMedia.isVideoUrl(u)) {
+        return AryamMedia.posterUrl(u, "thumb");
+      }
       return typeof AryamMedia !== "undefined" ? AryamMedia.displayUrl(u, "thumb") : u;
     }
+    function isVid(u) {
+      return typeof AryamMedia !== "undefined" && AryamMedia.isVideoUrl(u);
+    }
 
-    var img = detailSrc(gallery[0]);
-    var imgFull = fullSrc(gallery[0]);
+    function mainMediaHtml(u, title) {
+      if (isVid(u)) {
+        return (
+          '<video id="zoomImg" class="pdp-media" src="' + u + '" poster="' + thumbSrc(u) + '" ' +
+            'data-full="' + u + '" data-media="video" muted playsinline loop controls ' +
+            'aria-label="' + escapeHtml(title) + '"></video>'
+        );
+      }
+      return (
+        '<img id="zoomImg" class="pdp-media" src="' + detailSrc(u) + '" data-full="' + fullSrc(u) + '" data-media="image" alt="' + escapeHtml(title) + '" />'
+      );
+    }
+
+    function lightboxMediaHtml(u) {
+      if (isVid(u)) {
+        return '<video id="lightboxImg" src="' + u + '" controls playsinline></video>';
+      }
+      return '<img id="lightboxImg" src="' + fullSrc(u) + '" alt="" />';
+    }
+
+    var cover = gallery[0];
     var inStock = p.stock_qty > 0;
     var thumbsHtml = gallery.length > 1
       ? '<div class="pdp-thumbs" id="pdpThumbs">' + gallery.map(function (u, i) {
           return (
-            '<button type="button" class="pdp-thumb' + (i === 0 ? " is-active" : "") + '" data-gallery-index="' + i + '" aria-label="Photo ' + (i + 1) + '">' +
+            '<button type="button" class="pdp-thumb' + (i === 0 ? " is-active" : "") + (isVid(u) ? " is-video" : "") + '" data-gallery-index="' + i + '" aria-label="Media ' + (i + 1) + '">' +
               '<img src="' + thumbSrc(u) + '" alt="" />' +
+              (isVid(u) ? '<span class="thumb-video-dot">▶</span>' : "") +
             "</button>"
           );
         }).join("") + "</div>"
@@ -175,10 +208,11 @@
       '<div class="pdp-layout">' +
         '<div class="pdp-gallery">' +
           '<div class="pdp-frame" id="zoomFrame" title="Click to enlarge">' +
-            '<img id="zoomImg" src="' + img + '" data-full="' + imgFull + '" alt="' + escapeHtml(p.title) + '" />' +
+            mainMediaHtml(cover, p.title) +
           "</div>" +
           thumbsHtml +
-          '<p class="pdp-hint">Hover to inspect detail · click to open full size' +
+          '<p class="pdp-hint">' +
+            (isVid(cover) ? "Video plays muted · tap for full size" : "Hover to inspect detail · click to open full size") +
             (gallery.length > 1 ? " · tap thumbnails for more angles" : "") +
           "</p>" +
         "</div>" +
@@ -217,11 +251,11 @@
       relatedHtml +
       '<div class="lightbox" id="lightbox" role="dialog" aria-modal="true">' +
         '<button type="button" id="lbClose" aria-label="Close">×</button>' +
-        '<img id="lightboxImg" src="' + imgFull + '" alt="" />' +
+        '<div class="lightbox-media" id="lightboxMedia">' + lightboxMediaHtml(cover) + "</div>" +
       "</div>";
 
     setupZoom();
-    setupGallery(gallery, detailSrc, fullSrc);
+    setupGallery(gallery);
     setupCart(p);
     AryamPricing.fetchSpot().then(function (spot) {
       if (!spot || breakdown.mode === "fixed") return;
@@ -237,52 +271,91 @@
 
   function setupZoom() {
     var frame = document.getElementById("zoomFrame");
-    var img = document.getElementById("zoomImg");
     var lb = document.getElementById("lightbox");
-    var lbImg = document.getElementById("lightboxImg");
-    if (!frame || !img || !lb) return;
+    var lbWrap = document.getElementById("lightboxMedia");
+    if (!frame || !lb || frame.dataset.bound === "1") return;
+    frame.dataset.bound = "1";
 
     frame.addEventListener("mousemove", function (e) {
+      var media = document.getElementById("zoomImg");
+      if (!media || media.tagName === "VIDEO") return;
       if (window.matchMedia("(hover: none)").matches) return;
       var r = frame.getBoundingClientRect();
       var x = ((e.clientX - r.left) / r.width) * 100;
       var y = ((e.clientY - r.top) / r.height) * 100;
-      img.style.transformOrigin = x + "% " + y + "%";
-      img.style.transform = "scale(1.85)";
+      media.style.transformOrigin = x + "% " + y + "%";
+      media.style.transform = "scale(1.85)";
     });
     frame.addEventListener("mouseleave", function () {
-      img.style.transform = "scale(1)";
+      var media = document.getElementById("zoomImg");
+      if (!media || media.tagName === "VIDEO") return;
+      media.style.transform = "scale(1)";
     });
-    frame.addEventListener("click", function () {
-      if (lbImg) lbImg.src = img.getAttribute("data-full") || img.src;
+    frame.addEventListener("click", function (e) {
+      var media = document.getElementById("zoomImg");
+      if (!media) return;
+      if (media.tagName === "VIDEO" && (e.target.tagName === "VIDEO" || e.target.closest("video"))) {
+        return;
+      }
+      var src = media.getAttribute("data-full") || media.currentSrc || media.src;
+      var isVideo = media.getAttribute("data-media") === "video" || media.tagName === "VIDEO";
+      if (lbWrap) {
+        lbWrap.innerHTML = isVideo
+          ? '<video id="lightboxImg" src="' + src + '" controls playsinline autoplay></video>'
+          : '<img id="lightboxImg" src="' + src + '" alt="" />';
+      }
       lb.classList.add("open");
     });
     document.getElementById("lbClose").addEventListener("click", function () {
       lb.classList.remove("open");
+      var v = document.getElementById("lightboxImg");
+      if (v && v.tagName === "VIDEO") v.pause();
     });
     lb.addEventListener("click", function (e) {
-      if (e.target === lb) lb.classList.remove("open");
+      if (e.target === lb) {
+        lb.classList.remove("open");
+        var v = document.getElementById("lightboxImg");
+        if (v && v.tagName === "VIDEO") v.pause();
+      }
     });
   }
 
-  function setupGallery(gallery, detailSrc, fullSrc) {
+  function setupGallery(gallery) {
     var thumbs = document.getElementById("pdpThumbs");
-    var img = document.getElementById("zoomImg");
-    var lbImg = document.getElementById("lightboxImg");
-    if (!thumbs || !img || !gallery || gallery.length < 2) return;
+    var frame = document.getElementById("zoomFrame");
+    if (!thumbs || !frame || !gallery || gallery.length < 2) return;
+
+    function isVid(u) {
+      return typeof AryamMedia !== "undefined" && AryamMedia.isVideoUrl(u);
+    }
+    function thumbSrc(u) {
+      if (isVid(u)) return AryamMedia.posterUrl(u, "thumb");
+      return AryamMedia.displayUrl(u, "thumb");
+    }
+    function detailSrc(u) {
+      return AryamMedia.displayUrl(u, "detail");
+    }
+    function fullSrc(u) {
+      return AryamMedia.displayUrl(u, "full");
+    }
 
     thumbs.addEventListener("click", function (e) {
       var btn = e.target.closest("[data-gallery-index]");
       if (!btn) return;
       var idx = Number(btn.getAttribute("data-gallery-index"));
       if (isNaN(idx) || !gallery[idx]) return;
-      img.src = detailSrc(gallery[idx]);
-      img.setAttribute("data-full", fullSrc(gallery[idx]));
-      if (lbImg) lbImg.src = fullSrc(gallery[idx]);
+      var u = gallery[idx];
+      if (isVid(u)) {
+        frame.innerHTML =
+          '<video id="zoomImg" class="pdp-media" src="' + u + '" poster="' + thumbSrc(u) + '" ' +
+            'data-full="' + u + '" data-media="video" muted playsinline loop controls></video>';
+      } else {
+        frame.innerHTML =
+          '<img id="zoomImg" class="pdp-media" src="' + detailSrc(u) + '" data-full="' + fullSrc(u) + '" data-media="image" alt="" />';
+      }
       Array.prototype.forEach.call(thumbs.querySelectorAll(".pdp-thumb"), function (el) {
         el.classList.toggle("is-active", el === btn);
       });
-      img.style.transform = "scale(1)";
     });
   }
 

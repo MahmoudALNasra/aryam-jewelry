@@ -11,12 +11,17 @@
     var price = AryamPricing.formatMoney(AryamPricing.displayPrice(p));
     var out = p.stock_qty <= 0;
     var img = p.image_url || "../images/hero.jpg";
-    if (typeof AryamMedia !== "undefined") img = AryamMedia.displayUrl(img, "thumb");
-    else if (img.indexOf("http") !== 0 && img.indexOf("/") !== 0) img = "/" + img.replace(/^\.\.\//, "");
+    var video = typeof AryamMedia !== "undefined" && AryamMedia.isVideoUrl(img);
+    if (typeof AryamMedia !== "undefined") {
+      img = video ? AryamMedia.posterUrl(img, "thumb") : AryamMedia.displayUrl(img, "thumb");
+    } else if (img.indexOf("http") !== 0 && img.indexOf("/") !== 0) {
+      img = "/" + img.replace(/^\.\.\//, "");
+    }
     return (
       '<a class="product-card" href="/shop/product?slug=' + encodeURIComponent(p.slug) + '" data-reveal>' +
         '<div class="media">' +
           (out ? '<span class="soldout">Sold out</span>' : "") +
+          (video ? '<span class="media-video-badge">Video</span>' : "") +
           '<img src="' + img + '" alt="' + escapeAttr(p.title) + '" loading="lazy" width="600" height="800" />' +
         "</div>" +
         '<div class="body">' +

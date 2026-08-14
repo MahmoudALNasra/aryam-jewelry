@@ -82,19 +82,19 @@
           <div class="photo-strip" id="photoStrip" hidden></div>
           <div class="photo-actions">
             <button type="button" class="btn btn-gold btn-small" id="btnTakePhoto">Take photo</button>
-            <button type="button" class="btn btn-ghost btn-small" id="btnChooseGallery">Add from gallery</button>
-            <button type="button" class="btn btn-ghost btn-small photo-clear" id="btnClearPhoto">Clear all photos</button>
+            <button type="button" class="btn btn-ghost btn-small" id="btnChooseGallery">Add photo / video</button>
+            <button type="button" class="btn btn-ghost btn-small photo-clear" id="btnClearPhoto">Clear all media</button>
           </div>
           <!-- Separate inputs: capture only on camera. Gallery must never use capture (iPhone). -->
           <input type="file" id="photoCamera" class="photo-file-input" accept="image/*" capture="environment" />
-          <input type="file" id="photoGallery" class="photo-file-input" accept="image/*,image/heic,image/heif,.heic,.heif" multiple />
+          <input type="file" id="photoGallery" class="photo-file-input" accept="image/*,image/heic,image/heif,.heic,.heif,video/*,video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm,.m4v" multiple />
           <div class="upload-progress" id="uploadProgress" hidden>
             <div class="upload-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="uploadProgressTrack">
               <div class="upload-progress-bar" id="uploadProgressBar"></div>
             </div>
             <p class="upload-status" id="uploadStatus"></p>
           </div>
-          <p class="photo-hint">Add multiple angles (up to 8). First photo is the cover. Cloudinary first, Supabase Storage fallback.</p>
+          <p class="photo-hint">Photos and short videos (up to 8, videos max ~80MB). First item is the cover. Cloudinary first, Supabase fallback.</p>
           <p class="field-error" id="photoError" hidden>Add at least one photo before publishing.</p>
         </div>
 

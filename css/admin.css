@@ -465,6 +465,7 @@ label.is-invalid .field-error,
 }
 
 .photo-preview {
+  position: relative;
   aspect-ratio: 3 / 4;
   max-height: min(360px, 55vh);
   width: min(100%, 280px);
@@ -485,12 +486,31 @@ label.is-invalid .field-error,
 .photo-preview.has-image {
   border-style: solid;
   color: transparent;
+  padding: 0;
 }
 
-.photo-preview img {
+.photo-preview img,
+.photo-preview video {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
+  background: #000;
+}
+
+.photo-preview .media-badge,
+.photo-thumb .thumb-video {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(11, 10, 8, 0.82);
+  color: var(--gold-2);
+  padding: 0.12rem 0.3rem;
+  border-radius: 4px;
+  z-index: 1;
 }
 
 .photo-strip {

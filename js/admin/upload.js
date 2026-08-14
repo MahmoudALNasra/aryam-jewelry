@@ -1,13 +1,12 @@
-/* High-quality product photos → Cloudinary (preferred) or Supabase Storage */
+/* High-quality product photos/videos → Cloudinary (preferred) or Supabase Storage */
 (function (global) {
   "use strict";
 
   var BUCKET = "product-images";
-  /* Jewelry detail: keep near full phone resolution; only lightly encode */
   var MAX_SIDE = 4096;
   var JPEG_QUALITY = 0.94;
-  /* Skip re-encode when already a solid JPEG under these limits */
   var KEEP_ORIGINAL_MAX_BYTES = 12 * 1024 * 1024;
+  var MAX_VIDEO_BYTES = 80 * 1024 * 1024;
 
   function cfg() {
     return global.ARYAM_CONFIG || {};
@@ -32,6 +31,25 @@
   function hasSupabaseStorage() {
     var c = cfg();
     return !!(c.supabaseUrl && c.supabaseAnonKey);
+  }
+
+  function isVideoFile(file) {
+    if (!file) return false;
+    var type = (file.type || "").toLowerCase();
+    if (type.indexOf("video/") === 0) return true;
+    return /\.(mp4|webm|mov|m4v|avi|mkv)$/i.test(file.name || "");
+  }
+
+  function extForFile(file, isVideo) {
+    var name = String(file && file.name || "");
+    var m = name.match(/\.([a-z0-9]+)$/i);
+    if (m) return m[1].toLowerCase();
+    if (isVideo) {
+      if ((file.type || "").indexOf("webm") >= 0) return "webm";
+      if ((file.type || "").indexOf("quicktime") >= 0) return "mov";
+      return "mp4";
+    }
+    return "jpg";
   }
 
   function loadImage(file) {
@@ -123,6 +141,23 @@
     });
   }
 
+  function prepareVideo(file, onProgress) {
+    if (file.size > MAX_VIDEO_BYTES) {
+      return Promise.reject(new Error("Video is too large (max " + formatBytes(MAX_VIDEO_BYTES) + ")"));
+    }
+    report(onProgress, {
+      phase: "preparing",
+      percent: 20,
+      message: "Preparing video (" + formatBytes(file.size) + ")…"
+    });
+    report(onProgress, {
+      phase: "preparing",
+      percent: 40,
+      message: "Ready to upload video…"
+    });
+    return Promise.resolve(file);
+  }
+
   function blobToDataUrl(blob) {
     return new Promise(function (resolve, reject) {
       var reader = new FileReader();
@@ -132,12 +167,12 @@
     });
   }
 
-  function safePath(slugHint) {
+  function safePath(slugHint, ext) {
     var safe = String(slugHint || "piece")
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "") || "piece";
-    return safe + "-" + Date.now() + ".jpg";
+    return safe + "-" + Date.now() + "." + (ext || "jpg");
   }
 
   function trackUploadProgress(xhr, onProgress, label) {
@@ -162,18 +197,19 @@
     };
   }
 
-  function uploadToCloudinary(blob, path, onProgress) {
+  function uploadToCloudinary(blob, path, onProgress, resourceType) {
     var c = cfg();
     var cloud = c.cloudinaryCloudName;
     var preset = c.cloudinaryUploadPreset;
     var folder = c.cloudinaryFolder || "aryam/products";
-    var url = "https://api.cloudinary.com/v1_1/" + encodeURIComponent(cloud) + "/image/upload";
+    var kind = resourceType || "auto";
+    var url = "https://api.cloudinary.com/v1_1/" + encodeURIComponent(cloud) + "/" + kind + "/upload";
 
     var fd = new FormData();
     fd.append("file", blob, path);
     fd.append("upload_preset", preset);
     fd.append("folder", folder);
-    fd.append("public_id", path.replace(/\.jpe?g$/i, ""));
+    fd.append("public_id", path.replace(/\.[a-z0-9]+$/i, ""));
 
     return new Promise(function (resolve, reject) {
       var xhr = new XMLHttpRequest();
@@ -204,7 +240,7 @@
     });
   }
 
-  function uploadToSupabase(blob, path, onProgress) {
+  function uploadToSupabase(blob, path, onProgress, contentType) {
     var c = cfg();
     var base = (c.supabaseUrl || "").replace(/\/$/, "");
     var key = c.supabaseAnonKey || "";
@@ -219,7 +255,7 @@
       xhr.open("POST", url);
       xhr.setRequestHeader("apikey", key);
       xhr.setRequestHeader("Authorization", "Bearer " + key);
-      xhr.setRequestHeader("Content-Type", "image/jpeg");
+      xhr.setRequestHeader("Content-Type", contentType || blob.type || "application/octet-stream");
       xhr.setRequestHeader("x-upsert", "true");
       trackUploadProgress(xhr, onProgress, "Supabase");
 
@@ -246,11 +282,17 @@
   }
 
   function uploadProductImage(file, slugHint, onProgress) {
-    var path = safePath(slugHint);
+    var video = isVideoFile(file);
+    var ext = extForFile(file, video);
+    var path = safePath(slugHint, ext);
+    var resourceType = video ? "video" : "image";
+    var contentType = file.type || (video ? "video/mp4" : "image/jpeg");
 
-    return compressFile(file, onProgress).then(function (blob) {
+    var prepared = video ? prepareVideo(file, onProgress) : compressFile(file, onProgress);
+
+    return prepared.then(function (blob) {
       var tryCloud = hasCloudinary()
-        ? uploadToCloudinary(blob, path, onProgress)
+        ? uploadToCloudinary(blob, path, onProgress, video ? "video" : "auto")
         : Promise.reject(new Error("Cloudinary not configured"));
 
       return tryCloud.catch(function (cloudErr) {
@@ -263,7 +305,7 @@
           });
         }
         if (!hasSupabaseStorage()) throw cloudErr;
-        return uploadToSupabase(blob, path, onProgress);
+        return uploadToSupabase(blob, path, onProgress, contentType);
       }).catch(function (err) {
         console.warn("Cloud upload failed, using local preview URL:", err);
         report(onProgress, {
@@ -281,8 +323,10 @@
     uploadProductImage: uploadProductImage,
     formatBytes: formatBytes,
     hasCloudinary: hasCloudinary,
+    isVideoFile: isVideoFile,
     BUCKET: BUCKET,
     MAX_SIDE: MAX_SIDE,
+    MAX_VIDEO_BYTES: MAX_VIDEO_BYTES,
     JPEG_QUALITY: JPEG_QUALITY
   };
 })(window);
