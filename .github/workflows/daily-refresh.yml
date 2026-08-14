@@ -1,0 +1,33 @@
+# Daily refresh — Google reviews (+ Instagram if Meta token is set)
+name: Daily content refresh
+
+on:
+  schedule:
+    # ~7:00 AM America/Chicago (12:00 UTC)
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refresh Google reviews
+        run: |
+          curl -sS -X POST \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{}' \
+            "https://bchtmthgapxyralrcsxf.supabase.co/functions/v1/refresh-google-reviews" \
+            | head -c 400
+          echo
+
+      - name: Refresh Instagram (optional — needs INSTAGRAM_ACCESS_TOKEN on Edge)
+        run: |
+          curl -sS -X POST \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{}' \
+            "https://bchtmthgapxyralrcsxf.supabase.co/functions/v1/refresh-instagram" \
+            | head -c 400
+          echo
+        continue-on-error: true

@@ -1,8 +1,8 @@
-/* Instagram embeds — same pattern as reviews: 3 visible, rotate through up to 9 */
+/* Instagram embeds — rotate 3-at-a-time; revalidate from Supabase at least every 24h */
 (function () {
   "use strict";
 
-  var CACHE_KEY = "aryamInstagramPostsV5";
+  var CACHE_KEY = "aryamInstagramPostsV6";
   var DAY_MS = 24 * 60 * 60 * 1000;
   var MAX_POSTS = 9;
   var ROTATE_MS = 4200;
@@ -177,7 +177,21 @@
   }
 
   function writeLocal(payload) {
-    try { localStorage.setItem(CACHE_KEY, JSON.stringify(payload)); } catch (e) { /* ignore */ }
+    try {
+      var copy = Object.assign({}, payload, { _cached_at: new Date().toISOString() });
+      localStorage.setItem(CACHE_KEY, JSON.stringify(copy));
+    } catch (e) { /* ignore */ }
+  }
+
+  function cacheAgeMs(payload) {
+    var stamp = payload && (payload._cached_at || payload.updated_at);
+    if (!stamp) return Infinity;
+    var t = Date.parse(stamp);
+    return isNaN(t) ? Infinity : Date.now() - t;
+  }
+
+  function isFresh(payload) {
+    return payload && cacheAgeMs(payload) < DAY_MS;
   }
 
   function ts(payload) {
@@ -220,6 +234,26 @@
       .catch(function () { return null; });
   }
 
+  /** Optional: if Meta token exists, try live IG pull; otherwise no-op */
+  function tryLiveRefresh() {
+    if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) return Promise.resolve(null);
+    var url = cfg.supabaseUrl.replace(/\/$/, "") + "/functions/v1/refresh-instagram";
+    return fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + cfg.supabaseAnonKey,
+        "Content-Type": "application/json"
+      },
+      body: "{}"
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j && Array.isArray(j.posts) && j.posts.length) return normalize(j);
+        return null;
+      })
+      .catch(function () { return null; });
+  }
+
   var resizeTimer = null;
   window.addEventListener("resize", function () {
     clearTimeout(resizeTimer);
@@ -232,21 +266,49 @@
     }, 200);
   });
 
+  function applyBest(remote, file, local) {
+    var pick = null;
+    if (remote && ts(remote) >= ts(file) && ts(remote) >= ts(local)) pick = remote;
+    else if (file && ts(file) > ts(remote)) pick = file;
+    else pick = remote || file || local;
+    if (pick) {
+      writeLocal(pick);
+      render(pick);
+    }
+  }
+
   function boot() {
     var local = readLocal();
-    if (local) render(local);
+
+    // Show cached immediately only if younger than 24h
+    if (local && isFresh(local)) {
+      render(local);
+    } else if (local) {
+      render(local); // paint stale briefly, then force refresh
+    }
+
+    var needsRefresh = !local || !isFresh(local);
 
     Promise.all([loadFromSupabase(), loadFile()]).then(function (pair) {
       var remote = pair[0];
       var file = pair[1];
-      var pick = null;
-      if (remote && ts(remote) >= ts(local) && ts(remote) >= ts(file)) pick = remote;
-      else if (file && ts(file) > ts(remote)) pick = file;
-      else pick = remote || file || local;
-      if (pick) {
-        writeLocal(pick);
-        render(pick);
+
+      // Prefer newer Supabase (admin publish) even inside the 24h window
+      if (remote && ts(remote) > ts(local)) {
+        applyBest(remote, file, local);
+        return;
       }
+
+      if (!needsRefresh && local && isFresh(local)) {
+        // Still sync quietly if remote is same/newer
+        if (remote) writeLocal(remote);
+        return;
+      }
+
+      // Cache expired (≥24h): refresh from network; try live IG API if configured
+      return tryLiveRefresh().then(function (live) {
+        applyBest(live || remote, file, local);
+      });
     }).catch(function () {
       if (!local) {
         loadFile().then(function (file) {
