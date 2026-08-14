@@ -234,7 +234,15 @@
     f.weight_grams.value = product ? product.weight_grams : "";
     f.sell_price_per_gram.value = product ? product.sell_price_per_gram : "";
     f.making_charge.value = product ? product.making_charge : 0;
+    f.fixed_price.value = product && product.fixed_price != null ? product.fixed_price : "";
     f.stock_qty.value = product ? product.stock_qty : 1;
+    f.rich_content.value = product ? (product.rich_content || "") : "";
+    f.rich_content_ar.value = product ? (product.rich_content_ar || "") : "";
+    var mode = product && product.price_mode === "fixed" ? "fixed" : "formula";
+    Array.prototype.forEach.call(editor.querySelectorAll('input[name="price_mode"]'), function (r) {
+      r.checked = r.value === mode;
+    });
+    syncPriceModeUI();
     imageUrlField.value = product ? (product.image_url || "") : "";
     setImageUrls(product ? (product.image_urls && product.image_urls.length ? product.image_urls : (product.image_url ? [product.image_url] : [])) : []);
     f.published.checked = product ? !!product.published : true;
@@ -278,6 +286,29 @@
 
   var skuManual = false;
 
+  function currentPriceMode() {
+    var checked = editor.querySelector('input[name="price_mode"]:checked');
+    return checked && checked.value === "fixed" ? "fixed" : "formula";
+  }
+
+  function syncPriceModeUI() {
+    var mode = currentPriceMode();
+    var formulaFields = document.getElementById("formulaFields");
+    var fixedField = document.getElementById("fixedPriceField");
+    var tools = document.querySelector(".editor-tools");
+    if (formulaFields) formulaFields.hidden = mode !== "formula";
+    if (fixedField) fixedField.hidden = mode !== "fixed";
+    if (tools) tools.hidden = mode !== "formula";
+    if (editor.sell_price_per_gram) {
+      if (mode === "formula") editor.sell_price_per_gram.setAttribute("data-validate", "price");
+      else editor.sell_price_per_gram.removeAttribute("data-validate");
+    }
+    if (editor.fixed_price) {
+      if (mode === "fixed") editor.fixed_price.setAttribute("data-validate", "fixed");
+      else editor.fixed_price.removeAttribute("data-validate");
+    }
+  }
+
   function refreshSku(force) {
     if (!editor || !editor.sku) return;
     if (!force && skuManual) return;
@@ -288,15 +319,27 @@
   function updatePreview() {
     if (!editor || editor.hidden) return;
     var mock = {
+      price_mode: currentPriceMode(),
       weight_grams: Number(editor.weight_grams.value) || 0,
       sell_price_per_gram: Number(editor.sell_price_per_gram.value) || 0,
       making_charge: Number(editor.making_charge.value) || 0,
+      fixed_price: editor.fixed_price.value === "" ? null : Number(editor.fixed_price.value),
       karat: Number(editor.karat.value) || 21
     };
     var price = AryamPricing.displayPrice(mock);
     var el = document.getElementById("pricePreview");
     var market = spotOz != null ? AryamPricing.marketPerGram(spotOz, mock.karat) : null;
     var margin = market != null ? mock.sell_price_per_gram - market : null;
+    if (mock.price_mode === "fixed") {
+      el.innerHTML =
+        '<div class="big">' + AryamPricing.formatMoney(price) + "</div>" +
+        "<div>Fixed total price</div>" +
+        (market != null
+          ? "<div style='margin-top:0.5rem;color:var(--muted)'>Market ref ~" + AryamPricing.formatMoney(market) +
+            "/g for " + mock.karat + "K · " + mock.weight_grams + " g</div>"
+          : "");
+      return;
+    }
     el.innerHTML =
       '<div class="big">' + AryamPricing.formatMoney(price) + "</div>" +
       "<div>" + mock.weight_grams + " g × " + AryamPricing.formatMoney(mock.sell_price_per_gram) + "/g" +
@@ -322,8 +365,16 @@
   if (cardsEl) cardsEl.addEventListener("click", onListClick);
 
   if (editor) {
-    ["weight_grams", "sell_price_per_gram", "making_charge", "karat"].forEach(function (name) {
-      editor[name].addEventListener("input", updatePreview);
+    ["weight_grams", "sell_price_per_gram", "making_charge", "karat", "fixed_price"].forEach(function (name) {
+      if (editor[name]) editor[name].addEventListener("input", updatePreview);
+    });
+
+    Array.prototype.forEach.call(editor.querySelectorAll('input[name="price_mode"]'), function (r) {
+      r.addEventListener("change", function () {
+        syncPriceModeUI();
+        updatePreview();
+        showFormError("");
+      });
     });
 
     ["title", "weight_grams", "karat"].forEach(function (name) {
@@ -506,6 +557,7 @@
       if (kind === "required") ok = raw.length > 0;
       else if (kind === "weight") ok = Number(raw) > 0 && isFinite(Number(raw));
       else if (kind === "price") ok = raw !== "" && Number(raw) >= 0 && isFinite(Number(raw));
+      else if (kind === "fixed") ok = raw !== "" && Number(raw) >= 0 && isFinite(Number(raw));
       else if (kind === "making") ok = raw === "" || (Number(raw) >= 0 && isFinite(Number(raw)));
       else if (kind === "stock") ok = raw !== "" && Number(raw) >= 0 && Number.isFinite(Number(raw)) && Math.floor(Number(raw)) === Number(raw);
       else if (kind === "category") ok = CATEGORIES.indexOf(raw) >= 0;
@@ -525,6 +577,7 @@
     }
 
     function validateForm(touched) {
+      syncPriceModeUI();
       var ok = true;
       var fields = editor.querySelectorAll("[data-validate]");
       Array.prototype.forEach.call(fields, function (el) {
@@ -575,6 +628,7 @@
         return;
       }
       var urls = getImageUrls();
+      var mode = currentPriceMode();
       var btn = document.getElementById("btnSave");
       btn.disabled = true;
       btn.textContent = "Saving…";
@@ -586,13 +640,17 @@
         title_ar: editor.title_ar.value.trim(),
         description: editor.description.value.trim(),
         description_ar: editor.description_ar.value.trim(),
+        rich_content: editor.rich_content.value.trim(),
+        rich_content_ar: editor.rich_content_ar.value.trim(),
         seo_title: editor.seo_title.value.trim(),
         seo_description: editor.seo_description.value.trim(),
         category: editor.category.value,
         karat: Number(editor.karat.value),
         weight_grams: Number(editor.weight_grams.value),
-        sell_price_per_gram: Number(editor.sell_price_per_gram.value),
+        sell_price_per_gram: mode === "formula" ? Number(editor.sell_price_per_gram.value) : Number(editor.sell_price_per_gram.value) || 0,
         making_charge: Number(editor.making_charge.value) || 0,
+        price_mode: mode,
+        fixed_price: mode === "fixed" ? Number(editor.fixed_price.value) : null,
         stock_qty: Number(editor.stock_qty.value) || 0,
         image_url: urls[0] || "",
         image_urls: urls,

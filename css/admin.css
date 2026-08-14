@@ -348,6 +348,72 @@ body.admin-body {
   color: var(--gold-2);
 }
 
+.price-mode-box {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.02);
+  min-width: 0;
+}
+
+.price-mode-box legend {
+  padding: 0 0.35rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.price-mode-toggle {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
+}
+
+@media (min-width: 560px) {
+  .price-mode-toggle { grid-template-columns: 1fr 1fr; }
+}
+
+.price-mode-option {
+  display: grid !important;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 0.65rem;
+  row-gap: 0.15rem;
+  align-items: center;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--cream) !important;
+  font-size: 0.95rem !important;
+}
+
+.price-mode-option input {
+  grid-row: 1 / span 2;
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  margin: 0;
+}
+
+.price-mode-option span { font-weight: 600; color: var(--cream); }
+.price-mode-option small { grid-column: 2; color: var(--muted); font-size: 0.78rem; }
+
+.nested-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 720px) {
+  .nested-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.price-fields[hidden],
+#fixedPriceField[hidden] {
+  display: none !important;
+}
+
 .field-error {
   display: none;
   color: #e8a0a0;

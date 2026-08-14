@@ -128,13 +128,43 @@
             <input name="weight_grams" type="number" inputmode="decimal" step="0.001" min="0.001" required data-validate="weight" />
             <span class="field-error" hidden>Enter weight greater than 0.</span>
           </label>
-          <label>Sell price $/gram <span class="req" aria-hidden="true">*</span>
-            <input name="sell_price_per_gram" type="number" inputmode="decimal" step="0.01" min="0" required data-validate="price" />
-            <span class="field-error" hidden>Enter sell price per gram (0 or more).</span>
-          </label>
           <label>Stock qty <span class="req" aria-hidden="true">*</span>
             <input name="stock_qty" type="number" inputmode="numeric" step="1" min="0" value="1" required data-validate="stock" />
             <span class="field-error" hidden>Stock must be 0 or more.</span>
+          </label>
+
+          <fieldset class="price-mode-box full">
+            <legend>Price type <span class="req" aria-hidden="true">*</span></legend>
+            <div class="price-mode-toggle">
+              <label class="price-mode-option">
+                <input type="radio" name="price_mode" value="formula" checked />
+                <span>Formula</span>
+                <small>grams × $/g + making</small>
+              </label>
+              <label class="price-mode-option">
+                <input type="radio" name="price_mode" value="fixed" />
+                <span>Fixed price</span>
+                <small>set one total price</small>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="full price-fields" id="formulaFields">
+            <div class="editor-grid nested-grid">
+              <label>Sell price $/gram <span class="req" aria-hidden="true">*</span>
+                <input name="sell_price_per_gram" type="number" inputmode="decimal" step="0.01" min="0" data-validate="price" />
+                <span class="field-error" hidden>Enter sell price per gram (0 or more).</span>
+              </label>
+              <label>Making charge ($) <span class="optional">(optional)</span>
+                <input name="making_charge" type="number" inputmode="decimal" step="0.01" min="0" value="0" data-validate="making" />
+                <span class="field-error" hidden>Making charge cannot be negative.</span>
+              </label>
+            </div>
+          </div>
+
+          <label class="full" id="fixedPriceField" hidden>Fixed total price ($) <span class="req" aria-hidden="true">*</span>
+            <input name="fixed_price" type="number" inputmode="decimal" step="0.01" min="0" data-validate="fixed" />
+            <span class="field-error" hidden>Enter a fixed price of 0 or more.</span>
           </label>
 
           <p class="editor-section-label full">Optional details</p>
@@ -145,15 +175,17 @@
           <label>Slug (URL) <span class="optional">(optional · auto if blank)</span>
             <input name="slug" placeholder="auto if blank" autocomplete="off" />
           </label>
-          <label>Making charge ($) <span class="optional">(optional)</span>
-            <input name="making_charge" type="number" inputmode="decimal" step="0.01" min="0" value="0" data-validate="making" />
-            <span class="field-error" hidden>Making charge cannot be negative.</span>
-          </label>
-          <label class="full">Description (EN) <span class="optional">(optional)</span>
+          <label class="full">Short description (EN) <span class="optional">(optional)</span>
             <textarea name="description" rows="3"></textarea>
           </label>
-          <label class="full">Description (AR) <span class="optional">(optional)</span>
+          <label class="full">Short description (AR) <span class="optional">(optional)</span>
             <textarea name="description_ar" rows="2" lang="ar" dir="rtl"></textarea>
+          </label>
+          <label class="full">Rich story (EN) <span class="optional">(optional · supports **bold**, ## headings, - lists)</span>
+            <textarea name="rich_content" rows="6" placeholder="Craft story, care tips, occasion notes…"></textarea>
+          </label>
+          <label class="full">Rich story (AR) <span class="optional">(optional)</span>
+            <textarea name="rich_content_ar" rows="4" lang="ar" dir="rtl"></textarea>
           </label>
           <label class="full">SEO title <span class="optional">(optional)</span>
             <input name="seo_title" autocomplete="off" />

@@ -48,6 +48,7 @@
 
   function normalize(p) {
     var imgs = normalizeImages(p);
+    var mode = String(p.price_mode || "formula").toLowerCase() === "fixed" ? "fixed" : "formula";
     return {
       id: p.id,
       slug: p.slug,
@@ -56,13 +57,17 @@
       title_ar: p.title_ar || "",
       description: p.description || "",
       description_ar: p.description_ar || "",
+      rich_content: p.rich_content || "",
+      rich_content_ar: p.rich_content_ar || "",
       seo_title: p.seo_title || p.title,
       seo_description: p.seo_description || p.description || "",
       category: p.category || "other",
       karat: Number(p.karat),
       weight_grams: Number(p.weight_grams),
-      sell_price_per_gram: Number(p.sell_price_per_gram),
+      sell_price_per_gram: Number(p.sell_price_per_gram) || 0,
       making_charge: Number(p.making_charge) || 0,
+      price_mode: mode,
+      fixed_price: p.fixed_price == null || p.fixed_price === "" ? null : Number(p.fixed_price),
       stock_qty: Number(p.stock_qty) || 0,
       image_url: imgs.image_url,
       image_urls: imgs.image_urls,
@@ -147,7 +152,11 @@
     if (!(Number(row.weight_grams) > 0)) {
       return Promise.reject(new Error("Weight must be greater than 0"));
     }
-    if (!(Number(row.sell_price_per_gram) >= 0)) {
+    if (row.price_mode === "fixed") {
+      if (!(Number(row.fixed_price) >= 0) || row.fixed_price === null) {
+        return Promise.reject(new Error("Fixed price is required"));
+      }
+    } else if (!(Number(row.sell_price_per_gram) >= 0)) {
       return Promise.reject(new Error("Sell price per gram is invalid"));
     }
     if ([18, 21, 22, 24].indexOf(Number(row.karat)) < 0) {
@@ -174,8 +183,14 @@
         return insertOrUpdate(payload, isInsert).then(function (res) {
           if (res.error) {
             var msg = (res.error.message || "") + "";
-            if (/image_urls/i.test(msg)) {
-              delete payload.image_urls;
+            var dropped = false;
+            ["image_urls", "price_mode", "fixed_price", "rich_content", "rich_content_ar"].forEach(function (col) {
+              if (new RegExp(col, "i").test(msg) && Object.prototype.hasOwnProperty.call(payload, col)) {
+                delete payload[col];
+                dropped = true;
+              }
+            });
+            if (dropped) {
               return insertOrUpdate(payload, isInsert).then(function (res2) {
                 if (res2.error) throw res2.error;
                 return normalize(res2.data);

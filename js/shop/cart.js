@@ -40,6 +40,8 @@
         sell_price_per_gram: product.sell_price_per_gram,
         making_charge: product.making_charge,
         unit_price: global.AryamPricing.displayPrice(product),
+        price_mode: product.price_mode || "formula",
+        fixed_price: product.fixed_price,
         qty: Math.min(qty, max || qty),
         stock_qty: max
       });

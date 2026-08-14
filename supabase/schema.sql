@@ -24,6 +24,11 @@ create table if not exists public.products (
   image_path text,
   image_url text,
   image_urls jsonb not null default '[]'::jsonb,
+  price_mode text not null default 'formula'
+    check (price_mode in ('formula', 'fixed')),
+  fixed_price numeric(12,2),
+  rich_content text,
+  rich_content_ar text,
   published boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
