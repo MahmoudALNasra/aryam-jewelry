@@ -46,10 +46,16 @@
   var editor = document.getElementById("productEditor");
   var spotBar = document.getElementById("spotBar");
   var photoPreview = document.getElementById("photoPreview");
-  var photoFile = document.getElementById("photoFile");
+  var photoCamera = document.getElementById("photoCamera");
+  var photoGallery = document.getElementById("photoGallery");
   var uploadStatus = document.getElementById("uploadStatus");
   var imageUrlField = document.getElementById("imageUrlField");
   var spotOz = null;
+
+  function clearPhotoInputs() {
+    if (photoCamera) photoCamera.value = "";
+    if (photoGallery) photoGallery.value = "";
+  }
 
   function setPhotoPreview(url) {
     if (!photoPreview) return;
@@ -250,28 +256,55 @@
 
     document.getElementById("btnClearPhoto").addEventListener("click", function () {
       imageUrlField.value = "";
-      if (photoFile) photoFile.value = "";
+      clearPhotoInputs();
       setPhotoPreview("");
       if (uploadStatus) uploadStatus.textContent = "";
     });
 
-    if (photoFile) {
-      photoFile.addEventListener("change", function () {
-        var file = photoFile.files && photoFile.files[0];
-        if (!file) return;
-        uploadStatus.textContent = "Compressing & uploading…";
-        var hint = editor.slug.value || editor.title.value || "piece";
-        AryamUpload.uploadProductImage(file, hint)
-          .then(function (url) {
-            imageUrlField.value = url;
-            setPhotoPreview(url);
-            uploadStatus.textContent = url.indexOf("data:") === 0
-              ? "Saved as local preview (set up Storage for permanent cloud URLs)."
-              : "Photo uploaded.";
-          })
-          .catch(function (err) {
-            uploadStatus.textContent = "Upload failed: " + (err.message || err);
-          });
+    function onPhotoPicked(input) {
+      var file = input.files && input.files[0];
+      if (!file) return;
+      uploadStatus.textContent = "Compressing & uploading…";
+      var hint = editor.slug.value || editor.title.value || "piece";
+      AryamUpload.uploadProductImage(file, hint)
+        .then(function (url) {
+          imageUrlField.value = url;
+          setPhotoPreview(url);
+          uploadStatus.textContent = url.indexOf("data:") === 0
+            ? "Saved as local preview (set up Storage for permanent cloud URLs)."
+            : "Photo uploaded.";
+        })
+        .catch(function (err) {
+          uploadStatus.textContent = "Upload failed: " + (err.message || err);
+        });
+    }
+
+    function bindPhotoInput(input) {
+      if (!input) return;
+      input.addEventListener("change", function () {
+        onPhotoPicked(input);
+      });
+    }
+
+    bindPhotoInput(photoCamera);
+    bindPhotoInput(photoGallery);
+
+    var btnTakePhoto = document.getElementById("btnTakePhoto");
+    var btnChooseGallery = document.getElementById("btnChooseGallery");
+
+    if (btnTakePhoto && photoCamera) {
+      btnTakePhoto.addEventListener("click", function () {
+        photoCamera.value = "";
+        photoCamera.click();
+      });
+    }
+
+    if (btnChooseGallery && photoGallery) {
+      btnChooseGallery.addEventListener("click", function () {
+        // Ensure no capture attribute (iPhone opens camera if capture is set)
+        photoGallery.removeAttribute("capture");
+        photoGallery.value = "";
+        photoGallery.click();
       });
     }
 

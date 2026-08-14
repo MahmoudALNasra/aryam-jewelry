@@ -78,14 +78,15 @@
         <div class="photo-upload full" style="margin-bottom:1.25rem">
           <div class="photo-preview" id="photoPreview">Tap below to take or choose a photo</div>
           <div class="photo-actions">
-            <label class="btn btn-gold btn-small">
-              Camera / gallery
-              <input type="file" id="photoFile" accept="image/*" capture="environment" />
-            </label>
-            <button type="button" class="btn btn-ghost btn-small" id="btnClearPhoto">Clear photo</button>
+            <button type="button" class="btn btn-gold btn-small" id="btnTakePhoto">Take photo</button>
+            <button type="button" class="btn btn-ghost btn-small" id="btnChooseGallery">Choose from gallery</button>
+            <button type="button" class="btn btn-ghost btn-small photo-clear" id="btnClearPhoto">Clear photo</button>
           </div>
+          <!-- Separate inputs: capture only on camera. Gallery must never use capture (iPhone). -->
+          <input type="file" id="photoCamera" class="photo-file-input" accept="image/*" capture="environment" />
+          <input type="file" id="photoGallery" class="photo-file-input" accept="image/*,image/heic,image/heif,.heic,.heif" />
           <p class="upload-status" id="uploadStatus"></p>
-          <p class="photo-hint">Opens your camera on phones. Photos are compressed, then uploaded to Supabase Storage when connected.</p>
+          <p class="photo-hint">Take photo = camera. Choose from gallery = your photo library (scroll &amp; pick). Images are compressed, then uploaded when Storage is connected.</p>
         </div>
 
         <div class="editor-grid">
