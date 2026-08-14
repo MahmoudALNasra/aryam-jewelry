@@ -315,40 +315,14 @@
     });
   });
 
-  /* Collection cards cascade (mobile scrolls natively; desktop pinned below) */
+  /* Collection category cards cascade in */
   gsap.from(".collection-card", {
-    y: 60,
+    y: 48,
     autoAlpha: 0,
-    duration: 1,
+    duration: 0.9,
     ease: "power3.out",
-    stagger: 0.08,
-    scrollTrigger: { trigger: ".collections-viewport", start: "top 82%", once: true }
-  });
-
-  /* Pinned horizontal gallery on desktop */
-  var mm = gsap.matchMedia();
-  mm.add("(min-width: 1024px)", function () {
-    var track = $("#collectionsTrack");
-    var viewport = $(".collections-viewport");
-    if (!track || !viewport) return;
-
-    var distance = function () { return Math.max(0, track.scrollWidth - viewport.clientWidth); };
-    if (distance() <= 0) return;
-
-    var tween = gsap.to(track, {
-      x: function () { return -distance(); },
-      ease: "none",
-      scrollTrigger: {
-        trigger: ".collections-pin",
-        start: "top top",
-        end: function () { return "+=" + distance(); },
-        scrub: 1,
-        pin: true,
-        anticipatePin: 1,
-        invalidateOnRefresh: true
-      }
-    });
-    return function () { tween.scrollTrigger && tween.scrollTrigger.kill(); tween.kill(); };
+    stagger: 0.07,
+    scrollTrigger: { trigger: ".collections-grid", start: "top 82%", once: true }
   });
 
   /* Stat counters — markup already holds the real values, so the count-up

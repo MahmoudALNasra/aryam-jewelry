@@ -102,6 +102,26 @@
     return map[c] || "Gold";
   }
 
+  function updateShopHeading() {
+    var title = document.getElementById("shopTitle");
+    var intro = document.getElementById("shopIntro");
+    if (!title) return;
+    if (state.category && state.category !== "all") {
+      var label = labelCat(state.category);
+      title.innerHTML = label + ' <em>Collection</em>';
+      if (intro) {
+        intro.textContent = "Showing " + label.toLowerCase() + " from the online catalog. Change filters anytime below.";
+      }
+      document.title = label + " | Aryam's Jewelry Houston";
+    } else {
+      title.innerHTML = 'Shop the <em>Collection</em>';
+      if (intro) {
+        intro.textContent = "Ready pieces priced from the shop’s selling rate per gram — karat, weight and stock shown on every listing.";
+      }
+      document.title = "Shop Arabic Gold Jewelry | Aryam's Jewelry Houston — 21K & 22K";
+    }
+  }
+
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, function (c) {
       return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c];
@@ -116,6 +136,8 @@
       if (state.inStockOnly && p.stock_qty <= 0) return false;
       return true;
     });
+
+    updateShopHeading();
 
     if (!list.length) {
       grid.innerHTML = '<p class="empty-state">No pieces match these filters. Try another karat or category — or <a href="tel:+18327627620">call the store</a>.</p>';
@@ -152,6 +174,7 @@
 
   readFiltersFromUrl();
   syncFilterChips();
+  updateShopHeading();
 
   AryamCatalog.loadAll(false).then(function (products) {
     state.products = products;
