@@ -1,8 +1,8 @@
-/* Instagram — official embedded posts (up to 9), refreshed ~every 24h from JSON */
+/* Instagram — official embeds in a grid (up to 9). Prefers Supabase cache; admin can force-update anytime. */
 (function () {
   "use strict";
 
-  var CACHE_KEY = "aryamInstagramPostsV3";
+  var CACHE_KEY = "aryamInstagramPostsV4";
   var DAY_MS = 24 * 60 * 60 * 1000;
   var MAX_POSTS = 9;
   var IG_PROFILE = "https://www.instagram.com/aryamjewelry0/";
@@ -56,30 +56,6 @@
     );
   }
 
-  function loadEmbedScript(cb) {
-    if (window.instgrm && window.instgrm.Embeds) {
-      window.instgrm.Embeds.process();
-      if (cb) cb();
-      return;
-    }
-    var existing = document.querySelector('script[src*="instagram.com/embed.js"]');
-    if (existing) {
-      existing.addEventListener("load", function () {
-        if (window.instgrm) window.instgrm.Embeds.process();
-        if (cb) cb();
-      });
-      return;
-    }
-    var s = document.createElement("script");
-    s.async = true;
-    s.src = "https://www.instagram.com/embed.js";
-    s.onload = function () {
-      if (window.instgrm) window.instgrm.Embeds.process();
-      if (cb) cb();
-    };
-    document.body.appendChild(s);
-  }
-
   function render(data) {
     var posts = newestFirst((data && data.posts) || []).filter(function (p) {
       return isPostPermalink(p.url);
@@ -94,7 +70,7 @@
           '<div class="ig-fallback">' +
             '<iframe class="ig-profile-frame" title="@' + HANDLE + ' on Instagram" ' +
               'src="https://www.instagram.com/' + HANDLE + '/embed" loading="lazy" allowtransparency="true"></iframe>' +
-            '<p>Add up to 9 public post or reel links in <code>data/instagram.posts.json</code> to show each as an embedded Instagram post here.</p>' +
+            '<p>Instagram embeds are managed in Admin → Instagram posts. Paste public /reel/ or /p/ links (up to 9) and click Save &amp; publish.</p>' +
             '<a class="btn btn-gold" href="' + IG_PROFILE + '" target="_blank" rel="noopener">Go to Instagram</a>' +
           "</div>";
       }
@@ -107,7 +83,6 @@
     }
     grid.hidden = false;
     grid.innerHTML = posts.map(embedIframe).join("");
-    loadEmbedScript();
   }
 
   function readLocal() {
@@ -123,9 +98,10 @@
     try { localStorage.setItem(CACHE_KEY, JSON.stringify(payload)); } catch (e) { /* ignore */ }
   }
 
-  function isFresh(payload) {
-    if (!payload || !payload.updated_at) return false;
-    return Date.now() - new Date(payload.updated_at).getTime() < DAY_MS;
+  function ts(payload) {
+    if (!payload || !payload.updated_at) return 0;
+    var t = Date.parse(payload.updated_at);
+    return isNaN(t) ? 0 : t;
   }
 
   function normalize(data) {
@@ -164,25 +140,29 @@
 
   function boot() {
     var local = readLocal();
-    if (local && isFresh(local)) render(local);
-    else if (local) render(local);
+    if (local) render(local);
 
+    // Always check Supabase so Admin "Save & publish" shows up immediately
     Promise.all([loadFromSupabase(), loadFile()]).then(function (pair) {
       var remote = pair[0];
       var file = pair[1];
-      function hasEmbeds(d) {
-        return d && (d.posts || []).some(function (p) { return isPostPermalink(p.url); });
-      }
-      var pick = hasEmbeds(file) ? file : (hasEmbeds(remote) ? remote : (file || remote));
+      var pick = null;
+
+      if (remote && ts(remote) >= ts(local) && ts(remote) >= ts(file)) pick = remote;
+      else if (file && ts(file) > ts(remote)) pick = file;
+      else pick = remote || file || local;
+
       if (pick) {
         writeLocal(pick);
         render(pick);
       }
     }).catch(function () {
-      loadFile().then(function (file) {
-        writeLocal(file);
-        render(file);
-      });
+      if (!local) {
+        loadFile().then(function (file) {
+          writeLocal(file);
+          render(file);
+        });
+      }
     });
   }
 

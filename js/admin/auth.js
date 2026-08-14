@@ -2,6 +2,7 @@
   "use strict";
 
   var SESSION = "aryamAdminSession";
+  var PASS = "aryamAdminPass";
 
   function isAuthed() {
     try {
@@ -16,6 +17,7 @@
     var expected = cfg.adminDemoPassword || "aryam-admin-2026";
     if (password === expected) {
       sessionStorage.setItem(SESSION, "1");
+      try { sessionStorage.setItem(PASS, password); } catch (e) { /* ignore */ }
       return true;
     }
     return false;
@@ -23,6 +25,11 @@
 
   function logout() {
     sessionStorage.removeItem(SESSION);
+    sessionStorage.removeItem(PASS);
+  }
+
+  function getPassword() {
+    try { return sessionStorage.getItem(PASS) || ""; } catch (e) { return ""; }
   }
 
   function isLoginPage() {
@@ -36,5 +43,11 @@
     }
   }
 
-  global.AryamAdminAuth = { isAuthed: isAuthed, login: login, logout: logout, requireAuth: requireAuth };
+  global.AryamAdminAuth = {
+    isAuthed: isAuthed,
+    login: login,
+    logout: logout,
+    requireAuth: requireAuth,
+    getPassword: getPassword
+  };
 })(window);

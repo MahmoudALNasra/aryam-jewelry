@@ -813,6 +813,7 @@ a.review-card:hover {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: clamp(0.9rem, 2vw, 1.35rem);
+  align-items: stretch;
 }
 .ig-embed-item {
   position: relative;
@@ -820,14 +821,17 @@ a.review-card:hover {
   overflow: hidden;
   border: 1px solid var(--line);
   background: #0e0c0a;
-  min-height: 520px;
+  min-height: 540px;
+  aspect-ratio: 9 / 16;
+  max-height: 640px;
   display: flex;
   flex-direction: column;
 }
 .ig-embed-item iframe {
   flex: 1;
   width: 100%;
-  min-height: 520px;
+  height: 100%;
+  min-height: 0;
   border: 0;
   background: #fff;
 }
@@ -1103,8 +1107,7 @@ a.review-card:hover {
   .ig-embed-panel { min-height: 420px; }
   .ig-profile-frame { min-height: 420px; }
   .ig-embed-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .ig-embed-item,
-  .ig-embed-item iframe { min-height: 460px; }
+  .ig-embed-item { min-height: 480px; max-height: none; }
 
   .footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.2rem 1.5rem; }
   .footer-brand { grid-column: 1 / -1; }
