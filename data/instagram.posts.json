@@ -1,50 +1,7 @@
 {
   "handle": "aryamjewelry0",
   "profileUrl": "https://www.instagram.com/aryamjewelry0/",
-  "updated_at": "2026-08-14T15:00:00.000Z",
-  "_comment": "Paste up to 9 public post/reel links below (Copy link on Instagram — no login as owner needed). Example url: https://www.instagram.com/reel/XXXX/ or /p/XXXX/",
-  "posts": [
-    {
-      "url": "https://www.instagram.com/aryamjewelry0/",
-      "cover": "/images/bridal-set.jpg",
-      "caption": "Bridal & wedding gold sets",
-      "type": "reel",
-      "timestamp": "2026-08-10T12:00:00.000Z"
-    },
-    {
-      "url": "https://www.instagram.com/aryamjewelry0/",
-      "cover": "/images/bangles.jpg",
-      "caption": "Bangles & ghawayish",
-      "type": "reel",
-      "timestamp": "2026-08-08T12:00:00.000Z"
-    },
-    {
-      "url": "https://www.instagram.com/aryamjewelry0/",
-      "cover": "/images/necklaces.jpg",
-      "caption": "Chains & necklaces",
-      "type": "reel",
-      "timestamp": "2026-08-06T12:00:00.000Z"
-    },
-    {
-      "url": "https://www.instagram.com/aryamjewelry0/",
-      "cover": "/images/rings.jpg",
-      "caption": "Gold rings",
-      "type": "image",
-      "timestamp": "2026-08-04T12:00:00.000Z"
-    },
-    {
-      "url": "https://www.instagram.com/aryamjewelry0/",
-      "cover": "/images/gold-coins.jpg",
-      "caption": "Coins & bars",
-      "type": "image",
-      "timestamp": "2026-08-02T12:00:00.000Z"
-    },
-    {
-      "url": "https://www.instagram.com/aryamjewelry0/",
-      "cover": "/images/interior.jpg",
-      "caption": "Inside the Houston showroom",
-      "type": "image",
-      "timestamp": "2026-07-30T12:00:00.000Z"
-    }
-  ]
+  "updated_at": "2026-08-14T20:00:00.000Z",
+  "_comment": "Add up to 9 objects with real public links. Example: {\"url\":\"https://www.instagram.com/reel/AbCdEfGhIjK/\",\"type\":\"reel\",\"timestamp\":\"2026-08-14T12:00:00.000Z\"}",
+  "posts": []
 }

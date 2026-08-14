@@ -808,138 +808,70 @@ a.review-card:hover {
 }
 .ig-head .section-intro { max-width: 48ch; margin-bottom: 0; }
 .ig-head .btn { flex-shrink: 0; }
-.ig-layout {
+
+.ig-embed-grid {
   display: grid;
-  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
-  gap: clamp(1.2rem, 2.5vw, 2rem);
-  align-items: stretch;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.9rem, 2vw, 1.35rem);
 }
-.ig-embed-panel {
-  border-radius: 18px;
+.ig-embed-item {
+  position: relative;
+  border-radius: 16px;
   overflow: hidden;
   border: 1px solid var(--line);
   background: #0e0c0a;
-  min-height: 480px;
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
 }
-.ig-profile-frame {
+.ig-embed-item iframe {
+  flex: 1;
   width: 100%;
-  height: 100%;
   min-height: 520px;
   border: 0;
   background: #fff;
 }
-.ig-showcase {
-  overflow: hidden;
-  mask-image: linear-gradient(90deg, transparent, #000 2%, #000 98%, transparent);
-}
-.ig-track {
-  display: flex;
-  gap: 1rem;
-  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform;
-  width: max-content;
-}
-.ig-card {
-  flex: 0 0 min(72vw, 280px);
-  width: min(72vw, 280px);
-  border-radius: 18px;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  background: #0e0c0a;
-  text-decoration: none;
-  color: inherit;
-  position: relative;
-  aspect-ratio: 9 / 14;
-  display: flex;
-  flex-direction: column;
-}
-.ig-card-embed {
-  background: #000;
-}
-.ig-card-embed iframe {
-  flex: 1;
-  width: 100%;
-  height: 100%;
-  border: 0;
-  background: #000;
-}
-.ig-card-embed .ig-open {
+.ig-embed-open {
   position: absolute;
-  left: 0.7rem;
-  bottom: 0.7rem;
+  left: 0.75rem;
+  bottom: 0.75rem;
   z-index: 2;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #0b0a08;
   background: var(--gold);
-  padding: 0.4rem 0.65rem;
+  padding: 0.4rem 0.7rem;
   border-radius: 999px;
+  text-decoration: none;
 }
-.ig-media {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-.ig-media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  transform: scale(1.02);
-  transition: transform 0.7s ease;
-}
-.ig-card-cover:hover .ig-media img { transform: scale(1.08); }
-.ig-grad {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, transparent 45%, rgba(8, 7, 6, 0.92) 100%);
-  pointer-events: none;
-}
-.ig-play {
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  width: 58px;
-  height: 58px;
-  border-radius: 50%;
+.ig-empty:not([hidden]) { display: block; }
+.ig-fallback {
   display: grid;
-  place-items: center;
-  background: rgba(212, 175, 55, 0.92);
-  color: #0b0a08;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  z-index: 1;
-  animation: igPulse 2.4s ease-in-out infinite;
+  gap: 1.2rem;
+  justify-items: center;
+  text-align: center;
 }
-@keyframes igPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.06); }
+.ig-fallback .ig-profile-frame {
+  width: min(100%, 420px);
+  min-height: 540px;
+  border: 0;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: #fff;
 }
-.ig-meta {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1;
-  padding: 1rem 1rem 1.1rem;
-}
-.ig-handle {
-  display: block;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--gold);
-  margin-bottom: 0.25rem;
-}
-.ig-meta p {
+.ig-fallback p {
+  max-width: 46ch;
+  color: var(--muted);
+  font-size: 0.92rem;
   margin: 0;
-  font-size: 0.95rem;
-  color: var(--cream);
-  line-height: 1.35;
 }
+.ig-fallback code {
+  color: var(--gold-2);
+  font-size: 0.85em;
+}
+
 .ig-note {
   margin-top: 1.6rem;
   text-align: center;
@@ -1170,6 +1102,9 @@ a.review-card:hover {
   .ig-layout { grid-template-columns: 1fr; }
   .ig-embed-panel { min-height: 420px; }
   .ig-profile-frame { min-height: 420px; }
+  .ig-embed-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ig-embed-item,
+  .ig-embed-item iframe { min-height: 460px; }
 
   .footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.2rem 1.5rem; }
   .footer-brand { grid-column: 1 / -1; }
@@ -1199,6 +1134,7 @@ a.review-card:hover {
   .gold-spot-value { font-size: clamp(1.8rem, 8vw, 2.4rem); }
   .visit-phone { font-size: 1.4rem; word-break: break-word; }
   .faq-list summary { font-size: 0.98rem; padding: 1.1rem 0.1rem; min-height: 48px; }
+  .ig-embed-grid { grid-template-columns: 1fr; max-width: 420px; margin-inline: auto; }
 }
 
 @media (max-width: 480px) {
